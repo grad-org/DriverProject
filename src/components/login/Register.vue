@@ -79,7 +79,7 @@
 				if (this.errorText_nickname == '' && this.errorText_username == '' && this.errorText_password == '' && this.errorText_password_verify == '' ){
 					let _this = this;
 					_this.$store.dispatch('logout')
-					_this.$axios.post("/api/auth/registerPassenger", {
+					_this.$axios.post("/api/auth/register", {
 							username: _this.value_username,
 							password: _this.value_password,
 							nickname: _this.value_nickname
