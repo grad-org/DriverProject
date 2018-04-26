@@ -6,8 +6,6 @@
 			<mu-raised-button label="开放接单" :disabled="order_disabled" @click="goOrder"/>
 			&nbsp;&nbsp;&nbsp;
 			<mu-raised-button label="停止接单" :disabled="stop_disabled" @click="stopOrder"/>
-			&nbsp;&nbsp;&nbsp;
-			<mu-raised-button label="发送位置" :disabled="sendLocation_disabled" @click="sendLocation"/>
 		</div>
 		<div v-if="!List"></div>
 		<div v-else>
@@ -41,12 +39,12 @@
 			return {
 				order_disabled: false,
 				stop_disabled: true,
-				sendLocation_disabled: true,
 				List: false,
 				stompClient: null,
 				listenOrderSubscription: null,
 				
 				tripLists: null,
+				timeInterval: null,		// 定时器对象
 			}
 		},
 		created () {
@@ -62,12 +60,11 @@
 			goOrder () {
 				// 变量
 				let _this = this
-				let token = window.localStorage.getItem('token');
+				let token = window.localStorage.getItem('Token');
 
 				// 设置按钮可见不可见
 				_this.order_disabled = true;
 				_this.stop_disabled = false;
-				_this.sendLocation_disabled = false;
 				_this.List = true;
 
 				// 建立连接对象（还没发起连接）
@@ -91,6 +88,14 @@
 						_this.listenOrderSubscription = _this.stompClient.subscribe('/topic/hailingService/trip/publishTrip', function (trip) {
 							console.log(trip.body)
 						})
+						// 开始听单后，立刻向附近的用户发送位置
+						_this.sendLocation();
+						console.log('开始听单，立刻发送一次')
+						// 设置定时器
+						_this.timeInterval = setInterval(function () {
+							_this.sendLocation();
+							console.log('重复定时器，5秒发送一次！')
+						}, 5000)
 					},
 					// 连接失败的回调函数
 					function errorCallback (error) {
@@ -111,9 +116,10 @@
 				let _this = this
 				_this.order_disabled = false;
 				_this.stop_disabled = true;
-				_this.sendLocation_disabled = true;
 				_this.List = false;
 				_this.stompClient.disconnect()
+				// 停止听单，清除定时器
+				clearInterval(_this.timeInterval)
 			},
 			// 发送位置，让用户可见
 			sendLocation () {
