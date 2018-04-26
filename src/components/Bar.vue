@@ -122,16 +122,16 @@
 					forbidClick: true,
 					message: '退出登录…'
 				});
-					let second = 2;
-					const timer = setInterval(() => {
-						second--;
-						if (second == 1) {
-							toast.message = '退出登录…';
-						} else {
-							clearInterval(timer);
-							Toast.clear();
-							this.$router.push({name: 'Login'});
-						}
+				let second = 2;
+				const timer = setInterval(() => {
+					second--;
+					if (second == 1) {
+						toast.message = '退出登录…';
+					} else {
+						clearInterval(timer);
+						Toast.clear();
+						this.$router.push({name: 'Login'});
+					}
 				}, 1000);
 			},
 		}
