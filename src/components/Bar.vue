@@ -63,7 +63,12 @@
 		created () {
 			let _this = this;
 			let ls_token = window.localStorage.getItem('Token');
-			_this.ls_userinfo = JSON.parse(window.localStorage.getItem('UserInfo'))
+			let ls_userinfo = null;
+			if (typeof window.localStorage.getItem('UserInfo') === 'string') {
+				ls_userinfo = JSON.parse(window.localStorage.getItem('UserInfo'));
+			} else {
+				ls_userinfo = window.localStorage.getItem('UserInfo');
+			}
 
 			// 获取用户信息
 			if (_this.ls_userinfo == null || _this.ls_userinfo == undefined || _this.ls_userinfo == '') {
