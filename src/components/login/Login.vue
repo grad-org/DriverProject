@@ -65,7 +65,6 @@
 					_this.$store.dispatch('logout')
 					_this.$axios.get('/api/auth/verify?username=' + _this.value_username)
 					.then((response) => {
-						console.log(response)
 						if (response.status == 200) {
 							_this.$router.push({path: '/login/2', name: 'LoginNext', params: { username: _this.value_username }});
 						}
