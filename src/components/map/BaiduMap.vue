@@ -1,15 +1,12 @@
 <template>
 	<!-- ready是组件加载完之后才能执行的代码 -->
-	<baidu-map class="map" :center="center" :zoom="zoom" @ready="handler" @load="loadding" :scroll-wheel-zoom="true"
+	<baidu-map class="map" :center="center" :zoom="zoom" @ready="handler" :scroll-wheel-zoom="true"
 		:mapStyle="{styleJson: styleJson}">
 		<!-- 其中bm-geolocation中的locationIcon属性要加上“:”，否则会报错！ -->
 		<bm-geolocation anchor="BMAP_ANCHOR_BOTTOM_RIGHT" :showAddressBar="false" :autoLocation="true"
 			:locationIcon="{url: require('../../svg/location.svg'), size: {width: 18, height: 18}}" 
 			@locationSuccess="getLoctionSuccess" @locationError="getLocationError">
 		</bm-geolocation>
-		<bm-marker :position="enableSelectPoint"
-			:icon="{url: require('../../svg/enableselect.svg'), size: {width: 14, height: 14}}">
-		</bm-marker>
 		<!-- 自动定位覆盖物 -->
 		<bm-marker :position="autoLocationPoint"
 			:icon="{url: require('../../svg/location.svg'), size: {width: 18, height: 18}}" v-if="initLocation">
@@ -27,14 +24,6 @@
 				center: null,
 				zoom: 15,
 				styleJson: null,
-				enableSelectPoint: {lng: 110.307236, lat: 21.157355},
-				active: false,
-				selectAddress: '广东海洋大学',
-
-				// 调试用，海大餐厅 => 湖光镇派出所
-				outsetPoint: {lng: 110.308994, lat: 21.15026},
-				destinationPoint: {lng: 110.318268, lat: 21.12831},
-
 				autoLocationPoint: {lng: 0, lat: 0},
 				initLocation: false,
 			}
@@ -59,13 +48,9 @@
 					_this.$store.dispatch('localPoint', {title: null, address: null, point: r.point})
 				},{enableHighAccuracy: true})
 			},
-			loadding () {
-				// console.log("load组件加载时执行的抽象方法")
-			},
 			getLoctionSuccess (data) {
 				let _this = this;	// 指向vue实例
 				console.log(data);
-				this.zoom = 15;
 				_this.initLocation = true;
 				this.$store.dispatch('city', data.addressComponent.city)
 				var geocoder = new BMap.Geocoder();
@@ -96,6 +81,6 @@
 	/* 地图容器必须设置宽和高属性 */
 	.map {
 		width: 100%;
-		height: 300px;
+		height: 150px;
 	}
 </style>
