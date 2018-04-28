@@ -70,41 +70,12 @@
 				ls_userinfo = window.localStorage.getItem('UserInfo');
 			}
 
-			// 获取用户信息
-			if (_this.ls_userinfo == null || _this.ls_userinfo == undefined || _this.ls_userinfo == '') {
-				// 本地没有数据时发起get请求，获取数据
-				_this.$axios.get('/api/auth/user')
-				.then( (response) => {
-					console.log(response);
-					if (response.status == 200) {
-						_this.$store.dispatch('userId', response.data.data.id);
-						// JSON.stringify() 将JSON对象转化成字符串  
-						window.localStorage.setItem('UserInfo' ,JSON.stringify(response.data.data));
-					}
-				})
-				.catch ( (error) => {
-					console.log(error);
-				})
-				// 根据用户ID获取用户头像
-				_this.$axios.get('/images/user/' + _this.$store.state.userId + '.jpg')
-				.then( (response) => {
-					// console.log(response)
-					if (response.status == 200) {
-						this.avater = 'http://forcar.vip:8080/images/user/' + _this.$store.state.userId + '.jpg'
-						// _this.avater = 'http://forcar.vip:8080/images/user/2.jpg'
-					}
-				})
-				.catch( (error) => {
-					// console.log(error)
-					_this.avater = avater
-				})
-			} else {
-				// localstorage已存在本地信息，不需要再发起http请求
-				// 本地缓存图片的方法还没实现，暂时头像统一采用默认头像
-				_this.nickname = _this.ls_userinfo.nickname;
-				_this.username = _this.ls_userinfo.username;
-				_this.avater = avater;
-			}
+			// 需要完善缓存头像到本地、然后判断需不需要请求http
+			// 本地缓存图片的方法还没实现，暂时头像统一采用默认头像
+			_this.nickname = _this.ls_userinfo.nickname;
+			_this.username = _this.ls_userinfo.username;
+			_this.avater = avater;
+			
 		},
 		mounted() {
 			
