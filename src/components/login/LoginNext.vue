@@ -88,7 +88,6 @@
 						password: _this.value_password
 					})
 					.then( (response) => {
-						console.log(response);
 						if (response.status == 200) {
 							_this.$store.dispatch('login', response.data.data.token)
 
@@ -100,6 +99,7 @@
 									_this.$store.dispatch('userId', response.data.data.userId);
 									_this.$store.dispatch('driverId', response.data.data.driverId);
 									// JSON.stringify() 将JSON对象转化成字符串  
+									window.localStorage.setItem('UserId' ,response.data.data.userId);
 									window.localStorage.setItem('UserInfo' ,JSON.stringify(response.data.data));
 									_this.ls_userinfo = response.data.data;
 									if (_this.ls_userinfo.driverId == '' || _this.ls_userinfo.driverId == null || _this.ls_userinfo.driverId == undefined) {
