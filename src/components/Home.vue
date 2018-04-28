@@ -3,21 +3,38 @@
 		<bar></bar>
 		<baidu-map></baidu-map>
 		<div style="text-align: center; margin: 16px 16px">
-			<mu-raised-button label="开放接单" :disabled="order_disabled" @click="goOrder"/>
+			<mu-raised-button label="开放接单" :disabled="order_disabled" @click="getTrip"/>
 			&nbsp;&nbsp;&nbsp;
 			<mu-raised-button label="停止接单" :disabled="stop_disabled" @click="stopOrder"/>
 		</div>
 		<div v-if="!List"></div>
 		<div v-else>
-			<mu-list v-for="(tripList, index) in tripLists"  @itemClick="acceptOrder(index)" :key="index">
-				<mu-list-item 
-					:title="tripList.departure + ' → ' + tripList.destination" 
-					:describeText="'乘客：' + tripList.passengerNickname + '，出车时间：' + tripList.departureTime">
-					<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
-					<mu-badge content="即时" primary slot="right" v-if="judgeTripType(index)"/>
-					<mu-badge content="预约" secondary slot="right" v-else/>
-				</mu-list-item>
-			</mu-list>
+			<mu-tabs :value="activeTab" @change="handleTabChange">
+				<mu-tab value="published" title="已发布行程"/>
+				<mu-tab value="publishing" title="实时发布行程"/>
+			</mu-tabs>
+			 <div v-if="activeTab === 'published'">
+				<mu-list v-for="(publishedTripList, index) in publishedTripLists"  @itemClick="acceptOrder(index)" :key="index">
+					<mu-list-item 
+						:title="publishedTripList.departure + ' → ' + publishedTripList.destination" 
+						:describeText="'乘客：' + publishedTripList.passengerNickname + '，出车时间：' + publishedTripList.departureTime" >
+						<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
+						<mu-badge content="即时" primary slot="right" v-if="judgeTripType(index)"/>
+						<mu-badge content="预约" secondary slot="right" v-else/>
+					</mu-list-item>
+				</mu-list>
+			</div>
+			<div v-if="activeTab === 'publishing'">
+				<mu-list v-for="(publishingTripList, index) in publishingTripLists"  @itemClick="acceptOrder(index)" :key="index">
+					<mu-list-item 
+						:title="publishingTripList.departure + ' → ' + publishingTripList.destination" 
+						:describeText="'乘客：' + publishingTripList.passengerNickname + '，出车时间：' + publishingTripList.departureTime" >
+						<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
+						<mu-badge content="即时" primary slot="right" v-if="judgeNowTripType(index)"/>
+						<mu-badge content="预约" secondary slot="right" v-else/>
+					</mu-list-item>
+				</mu-list>
+			</div>
 		</div>
 	</div>
 </template>
@@ -42,13 +59,16 @@
 				List: false,
 				stompClient: null,
 				listenOrderSubscription: null,
+
+				activeTab: 'published',	// 默认激活的Tab
 				
-				tripLists: null,
+				publishedTripLists: null,
+				publishingTripLists: null,
 				timeInterval: null,		// 定时器对象
 			}
 		},
 		created () {
-			
+			this.publishingTripLists = [];
 		},
 		mounted () {
 			this.$nextTick( () => {
@@ -57,7 +77,7 @@
 		},
 		methods: {
 			// 用于订阅乘客发布的行程
-			goOrder () {
+			getTrip () {
 				// 变量
 				let _this = this
 				let token = window.localStorage.getItem('Token');
@@ -81,12 +101,13 @@
 						_this.$axios.get('/api/trip/search/findPublishedTripByCondition')
 						.then((response) => {
 							console.log(response.data.data);
-							_this.tripLists = response.data.data;
-							console.log('tripLists', _this.tripLists)
+							_this.publishedTripLists = response.data.data;
+							console.log('publishedTripLists', _this.publishedTripLists)
 						})
 						// 需要将订阅的对象传给一个变量，否则取消订阅时会找不到订阅id
 						_this.listenOrderSubscription = _this.stompClient.subscribe('/topic/hailingService/trip/publishTrip', function (trip) {
 							console.log(trip.body)
+							_this.publishingTripLists.push(JSON.parse(trip.body));
 						})
 						// 开始听单后，立刻向附近的用户发送位置
 						_this.sendLocation();
@@ -94,8 +115,8 @@
 						// 设置定时器
 						_this.timeInterval = setInterval(function () {
 							_this.sendLocation();
-							console.log('重复定时器，5秒发送一次！')
-						}, 5000)
+							console.log('重复定时器，30秒发送一次！')
+						}, 30000)
 					},
 					// 连接失败的回调函数
 					function errorCallback (error) {
@@ -131,25 +152,65 @@
 			// 接单
 			acceptOrder (orderIndex) {
 				console.log('司机接单，订单是：' + orderIndex)
+				if (this.activeTab == 'published') {
+					this.$axios.post('/api/hailingService/tripOrder/acceptTripOrder',{
+						tripId: this.publishedTripLists[orderIndex].tripId,
+						driverId: this.$store.state.driverId
+					})
+					.then((response) => {
+						console.log(response);
+					})
+					.catch((error) => {
+						console.log(error);
+					})
+				};
+				if (this.activeTab == 'publishing') {
+					this.$axios.post('/api/hailingService/tripOrder/acceptTripOrder',{
+						tripId: this.publishingTripLists[orderIndex].tripId,
+						driverId: this.$store.state.driverId
+					})
+					.then((response) => {
+						console.log(response);
+					})
+					.catch((error) => {
+						console.log(error);
+					})
+				}
 				
 			},
-			// 判断订单类型
+			// 判断已发布订单类型
 			judgeTripType (val) {
-				let tt = this.tripLists[val].tripType;
+				let tt = this.publishedTripLists[val].tripType;
 				let rt = 'REAL_TIME';
 				let re = 'RESERVED';
-				// equal(tripList.tripType) == 'REAL_TIME'
 				if ( tt == rt) {
 					return true
 				}
 				if ( tt == re) {
 					return false
 				}
+			},
+			// 判断实时订单内容
+			judgeNowTripType (val) {
+				let tt = this.publishingTripLists[val].tripType;
+				let rt = 'REAL_TIME';
+				let re = 'RESERVED';
+				if ( tt == rt) {
+					return true
+				}
+				if ( tt == re) {
+					return false
+				}
+			},
+			handleTabChange (val) {
+				this.activeTab = val;
 			}
 		}
 	}
 </script>
 
 <style scoped>
-	
+	.mu-list {
+		padding: 0;
+	}
 </style>
