@@ -8,6 +8,7 @@ import Login from '@/components/login/Login'
 import LoginNext from '@/components/login/LoginNext'
 import Register from '@/components/login/Register'
 import Authentication from '@/components/Authentication'
+import HandleTrip from '@/components/trip/HandleTrip'
 
 Vue.use(VueRouter)
 
@@ -48,6 +49,15 @@ const router = new VueRouter({
 			path: '/register',
 			name: 'Register',
 			component: Register
+		},
+		{
+			path: '/trip/handling',
+			name: 'Handling',
+			meta: {
+				requireAuth: true,
+				requireAuthDriver: true
+			},
+			component: HandleTrip
 		},
 
 	],
