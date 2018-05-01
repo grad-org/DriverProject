@@ -69,6 +69,7 @@
 		},
 		created () {
 			this.publishingTripLists = [];
+			console.log('有执行这里吗？')
 		},
 		mounted () {
 			this.$nextTick( () => {
@@ -130,6 +131,7 @@
 				let _this = this
 				if (_this.listenOrderSubscription != null) {
 					_this.listenOrderSubscription.unsubscribe();
+					console.log('司机接单，取消订阅')
 				}
 			},
 			// 停止接单，用于关闭连接
@@ -151,26 +153,42 @@
 			},
 			// 接单
 			acceptOrder (orderIndex) {
+				let _this = this;
 				console.log('司机接单，订单是：' + orderIndex)
-				if (this.activeTab == 'published') {
-					this.$axios.post('/api/hailingService/tripOrder/acceptTripOrder',{
-						tripId: this.publishedTripLists[orderIndex].tripId,
-						driverId: this.$store.state.driverId
+				if (_this.activeTab == 'published') {
+					// 车主受理订单，通知乘客
+					_this.$axios.post('/api/hailingService/tripOrder/acceptTripOrder',{
+						tripId: _this.publishedTripLists[orderIndex].tripId,
+						driverId: _this.$store.state.driverId
 					})
 					.then((response) => {
 						console.log(response);
+						console.log('接单返回数据');
+						if (response.status == 200) {
+							_this.stop_disabled = true;
+							_this.closeSubscribe();		// 车主接受某个订单后取消订阅
+							_this.stopOrder()	// 断开连接
+							window.localStorage.setItem('AcceptedTrip', JSON.stringify(response.data.data))
+							_this.$router.push({name: 'Handling'});
+							console.log('这里没有执行吗');
+						}
 					})
 					.catch((error) => {
 						console.log(error);
+						if (error.status == '400') {
+							alert('此订单已被受理！')
+						}
+						// 接下来应该刷新一下数据，重新获取已发布行程
 					})
 				};
-				if (this.activeTab == 'publishing') {
-					this.$axios.post('/api/hailingService/tripOrder/acceptTripOrder',{
-						tripId: this.publishingTripLists[orderIndex].tripId,
-						driverId: this.$store.state.driverId
+				if (_this.activeTab == 'publishing') {
+					_this.$axios.post('/api/hailingService/tripOrder/acceptTripOrder',{
+						tripId: _this.publishingTripLists[orderIndex].tripId,
+						driverId: _this.$store.state.driverId
 					})
 					.then((response) => {
 						console.log(response);
+						
 					})
 					.catch((error) => {
 						console.log(error);
