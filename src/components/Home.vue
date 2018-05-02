@@ -47,6 +47,8 @@
 
 	import Bar from './Bar'
 	import BaiduMap from './map/BaiduMap'
+	import SockJS from '../../static/utils/sockjs.js'
+	import Stomp from 'stompjs'
 
 	export default {
 		components: {
@@ -58,6 +60,7 @@
 				stop_disabled: true,
 				List: false,
 				stompClient: null,
+				// stompClient: Stomp.over(new SockJS('')),
 				listenOrderSubscription: null,
 
 				activeTab: 'published',	// 默认激活的Tab
@@ -69,12 +72,9 @@
 		},
 		created () {
 			this.publishingTripLists = [];
-			console.log('有执行这里吗？')
 		},
 		mounted () {
-			this.$nextTick( () => {
-				
-			})
+
 		},
 		methods: {
 			// 用于订阅乘客发布的行程
@@ -88,32 +88,30 @@
 				_this.stop_disabled = false;
 				_this.List = true;
 
-				// 建立连接对象（还没发起连接）
-				let socket = new SockJS('http://forcar.vip:8080/orh');
+				let socket = new SockJS('http://online-ride-hailing.herokuapp.com/orh');
 				_this.stompClient = Stomp.over(socket);
 
 				// 创建连接
 				_this.stompClient.connect(
 					// headers
-					{'Auth-Token': token},
+					{
+						'Auth-Token': token,
+					},
 					// 连接成功的回调函数
 					function connectCallback (frame) {
+						console.log('有执行这里？');
 						// 查询已发布的行程
 						_this.$axios.get('/api/trip/search/findPublishedTripByCondition')
 						.then((response) => {
-							console.log(response.data.data);
 							_this.publishedTripLists = response.data.data;
-							console.log('publishedTripLists', _this.publishedTripLists)
 						})
 						// 需要将订阅的对象传给一个变量，否则取消订阅时会找不到订阅id
 						_this.listenOrderSubscription = _this.stompClient.subscribe('/topic/hailingService/trip/publishTrip', function (trip) {
-							console.log(trip.body)
 							_this.publishingTripLists.push(JSON.parse(trip.body));
 						})
-						// 开始听单后，立刻向附近的用户发送位置
-						_this.sendLocation();
-						console.log('开始听单，立刻发送一次')
+						_this.sendLocation();	// 开始听单，立刻向用户发送位置
 						// 设置定时器
+						clearInterval(_this.timeInterval);
 						_this.timeInterval = setInterval(function () {
 							_this.sendLocation();
 							console.log('重复定时器，30秒发送一次！')
@@ -148,7 +146,6 @@
 			sendLocation () {
 				let _this = this;
 				let currentLocation = {carId: 1, lng: _this.$store.state.localPoint.point.lng, lat: _this.$store.state.localPoint.point.lat};
-				console.log(currentLocation)
 				_this.stompClient.send('/api/hailingService/car/uploadCarLocation', {}, JSON.stringify(currentLocation))
 			},
 			// 接单
@@ -166,11 +163,8 @@
 						console.log('接单返回数据');
 						if (response.status == 200) {
 							_this.stop_disabled = true;
-							_this.closeSubscribe();		// 车主接受某个订单后取消订阅
-							_this.stopOrder()	// 断开连接
 							window.localStorage.setItem('AcceptedTrip', JSON.stringify(response.data.data))
 							_this.$router.push({name: 'Handling'});
-							console.log('这里没有执行吗');
 						}
 					})
 					.catch((error) => {
@@ -223,6 +217,10 @@
 			handleTabChange (val) {
 				this.activeTab = val;
 			}
+		},
+		destroyed () {
+			this.closeSubscribe();		// 车主接受某个订单后取消订阅
+			this.stopOrder()	// 断开连接
 		}
 	}
 </script>
