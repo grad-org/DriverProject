@@ -17,7 +17,7 @@
 				<mu-list v-for="(publishedTripList, index) in publishedTripLists"  @itemClick="acceptOrder(index)" :key="index">
 					<mu-list-item 
 						:title="publishedTripList.departure + ' → ' + publishedTripList.destination" 
-						:describeText="'乘客：' + publishedTripList.passengerNickname + '，出车时间：' + publishedTripList.departureTime" >
+						:describeText="'乘客：' + publishedTripList.passengerNickname + '，出行时间：' + publishedTripList.departureTime" >
 						<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
 						<mu-badge content="即时" primary slot="right" v-if="judgeTripType(index)"/>
 						<mu-badge content="预约" secondary slot="right" v-else/>
@@ -26,9 +26,9 @@
 			</div>
 			<div v-if="activeTab === 'publishing'">
 				<mu-list v-for="(publishingTripList, index) in publishingTripLists"  @itemClick="acceptOrder(index)" :key="index">
-					<mu-list-item 
+					<mu-list-item
 						:title="publishingTripList.departure + ' → ' + publishingTripList.destination" 
-						:describeText="'乘客：' + publishingTripList.passengerNickname + '，出车时间：' + publishingTripList.departureTime" >
+						:describeText="'乘客：' + publishingTripList.passengerNickname + '，出行时间：' + publishingTripList.departureTime" >
 						<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
 						<mu-badge content="即时" primary slot="right" v-if="judgeNowTripType(index)"/>
 						<mu-badge content="预约" secondary slot="right" v-else/>
@@ -103,6 +103,7 @@
 						// 查询已发布的行程
 						_this.$axios.get('/api/trip/search/findPublishedTripByCondition')
 						.then((response) => {
+							console.log(response.data.data)
 							_this.publishedTripLists = response.data.data;
 						})
 						// 需要将订阅的对象传给一个变量，否则取消订阅时会找不到订阅id
