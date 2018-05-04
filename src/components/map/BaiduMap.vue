@@ -43,7 +43,6 @@
 					_this.center = {lng: r.longitude, lat: r.latitude};		// 设置center属性值
 					_this.autoLocationPoint = {lng: r.longitude, lat: r.latitude};		// 自定义覆盖物
 					_this.initLocation = true;
-					console.log('center:', _this.center)	// 如果这里直接使用this是不行的
 					_this.$store.dispatch('localPoint', {title: null, address: null, point: r.point})
 				},{enableHighAccuracy: true})
 			},
