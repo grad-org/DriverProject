@@ -9,6 +9,7 @@ import LoginNext from '@/components/login/LoginNext'
 import Register from '@/components/login/Register'
 import Authentication from '@/components/Authentication'
 import HandleTrip from '@/components/trip/HandleTrip'
+import CarDriving from '@/components/trip/CarDriving'
 
 Vue.use(VueRouter)
 
@@ -59,7 +60,15 @@ const router = new VueRouter({
 			},
 			component: HandleTrip
 		},
-
+		{
+			path: '/trip/car/driving',
+			name: 'CarDriving',
+			meta: {
+				requireAuth: true,
+				requireAuthDriver: true
+			},
+			component: CarDriving
+		},
 	],
 	mode: 'history'
 })
