@@ -44,6 +44,8 @@
 
 	// Nginx 从 1.3 版开始正式支持 WebSocket 代理。如果你的 web 应用使用了代理服务器 Nginx，那么你还需要为 Nginx 做一些配置，使得它开启 WebSocket 代理功能。
 	// 参考地址：https://www.cnblogs.com/jingmoxukong/p/7755643.html
+	// 
+	// 仍需解决： 发送位置给全体乘客，其中的数据carId还需要解决
 
 	import Bar from './Bar'
 	import BaiduMap from './map/BaiduMap'
@@ -99,16 +101,21 @@
 					},
 					// 连接成功的回调函数
 					function connectCallback (frame) {
-						console.log('有执行这里？');
 						// 查询已发布的行程
 						_this.$axios.get('/api/trip/search/findPublishedTripByCondition')
 						.then((response) => {
 							console.log(response.data.data)
 							_this.publishedTripLists = response.data.data;
+							console.log('publishedTripLists', _this.publishedTripLists);
 						})
 						// 需要将订阅的对象传给一个变量，否则取消订阅时会找不到订阅id
 						_this.listenOrderSubscription = _this.stompClient.subscribe('/topic/hailingService/trip/publishTrip', function (trip) {
-							_this.publishingTripLists.push(JSON.parse(trip.body));
+							console.log(trip);
+							let body = JSON.parse(trip.body);
+							console.log(body)
+							if (body.message == 'publishTrip') {
+								_this.publishingTripLists.push(body.data);
+							}
 						})
 						_this.sendLocation();	// 开始听单，立刻向用户发送位置
 						// 设置定时器
@@ -154,14 +161,14 @@
 				let _this = this;
 				console.log('司机接单，订单是：' + orderIndex)
 				if (_this.activeTab == 'published') {
-					// 车主受理订单，通知乘客
+					// 在已发布行程栏，车主受理订单，通知乘客
 					_this.$axios.post('/api/hailingService/tripOrder/acceptTripOrder',{
 						tripId: _this.publishedTripLists[orderIndex].tripId,
 						driverId: _this.$store.state.driverId
 					})
 					.then((response) => {
 						console.log(response);
-						console.log('接单返回数据');
+						console.log('已发布行程，司机接单返回数据');
 						if (response.status == 200) {
 							_this.stop_disabled = true;
 							window.localStorage.setItem('AcceptedTrip', JSON.stringify(response.data.data))
@@ -170,10 +177,16 @@
 					})
 					.catch((error) => {
 						console.log(error);
-						if (error.status == '400') {
+						if (error.status == 400) {
 							alert('此订单已被受理！')
+							// 接下来应该重新获取数据，重新获取已发布行程
+							_this.$axios.get('/api/trip/search/findPublishedTripByCondition')
+							.then((response) => {
+								console.log(response.data.data)
+								_this.publishedTripLists = response.data.data;
+								console.log('publishedTripLists', _this.publishedTripLists);
+							})
 						}
-						// 接下来应该刷新一下数据，重新获取已发布行程
 					})
 				};
 				if (_this.activeTab == 'publishing') {
@@ -182,11 +195,25 @@
 						driverId: _this.$store.state.driverId
 					})
 					.then((response) => {
-						console.log(response);
-						
+						console.log('实时发布的行程，司机接单返回数据');
+						if (response.status == 200) {
+							_this.stop_disabled = true;
+							window.localStorage.setItem('AcceptedTrip', JSON.stringify(response.data.data))
+							_this.$router.push({name: 'Handling'});
+						}
 					})
 					.catch((error) => {
 						console.log(error);
+						if (error.status == 400) {
+							alert('此订单已被受理！')
+							// 接下来应该重新订阅实时行程
+							_this.listenOrderSubscription = _this.stompClient.subscribe('/topic/hailingService/trip/publishTrip', function (trip) {
+							let body = JSON.parse(trip.body);
+							if (body.message == 'publishTrip') {
+								_this.publishingTripLists.push(body.data);
+							}
+						})
+						}
 					})
 				}
 				
