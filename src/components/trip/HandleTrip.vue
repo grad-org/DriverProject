@@ -2,20 +2,20 @@
 	<div>
 		<mu-appbar ref="barDiv" :title="passengerLocationTitle" style="text-align: center" />
 		<baidu-map-go ref="mapDiv" :style="{height: mapHeight}"></baidu-map-go>
-		<selector-go ref="selectDiv"></selector-go>
+		<go-selector ref="selectDiv"></go-selector>
 	</div>
 </template>
 
 <script>
 
 	import BaiduMapGo from '../map/BaiduMapGo'
-	import SelectorGo from '../selector/SelectorGo'
+	import GoSelector from '../selector/GoSelector'
 	import SockJS from '../../../static/utils/sockjs.js'
 	import Stomp from 'stompjs'
 
 	export default {
 		components: {
-			BaiduMapGo, SelectorGo
+			BaiduMapGo, GoSelector
 		},
 		data () {
 			return {
@@ -37,7 +37,7 @@
 				this.passengerLocationTitle = '前往接乘客...'
 			}
 			else {
-				this.passengerLocationTitle = '前往' + ls_acceptedtrip.departure + '接乘客...';
+				this.passengerLocationTitle = '前往' + ls_acceptedtrip.departure;
 			};
 			this.initHeight();
 			this.setMapHeight();
