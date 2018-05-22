@@ -10,13 +10,16 @@ import MuseUI from 'muse-ui'
 import 'muse-ui/dist/muse-ui.css'
 import 'muse-ui/dist/theme-light.css'
 import BaiduMap from 'vue-baidu-map'
+import VueSocketio from 'vue-socket.io'
 
 Vue.config.productionTip = false
 Vue.prototype.$axios = axios
+Vue.prototype.$serverUrl = 'http://forcar.vip:8080'
 Vue.use(MuseUI)
 Vue.use(BaiduMap, {
-	ak: '8yg5IA7svz9uCGoocOMDt6PSApHhQTF7'
+	ak: 'AgWMKM9B5sGxq6pgPsuymZp8ZrwqYtj7'
 })
+Vue.use(VueSocketio, 'http://forcar.vip:8081?token='+ store.state.token + '&role=role_driver')
 
 new Vue({
 	el: '#app',
