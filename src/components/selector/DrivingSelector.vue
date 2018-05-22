@@ -1,34 +1,17 @@
 <template>
 		<div ref="selectorDiv" class="container">
-			<mu-row gutter style="text-align: center; align-items:center">
-				<!-- 其中width指百分百 -->
-				<mu-col width="40" tablet="33" desktop="33">
-					<span>{{carPlateNo}}</span>
-					<span>{{carColor}}{{carBrand}}{{carSeries}}</span>
-				</mu-col>
-				<mu-col width="20" tablet="34" desktop="33">
-					<mu-paper class="paper" circle :zDepth="1" >
-						<img :src="avater" style="width: 100%; height: 100%"/>
-					</mu-paper>
-				</mu-col>
-				<mu-col width="40" tablet="33" desktop="33">
-					<span>{{driverName}}</span>
-					<span>{{driverEvaluate}}</span>
-				</mu-col>
-			</mu-row>
-			<mu-divider shallowInset />
-			<mu-row gutter style="text-align: center; align-items:center">
-				<!-- 其中width指百分百 -->
-				<mu-col width="33" tablet="33" desktop="33">
-					<mu-flat-button label="打电话" class="flat-button"/>
-				</mu-col>
-				<mu-col width="34" tablet="34" desktop="33">
-					<mu-flat-button label="发消息" class="flat-button"/>
-				</mu-col>
-				<mu-col width="33" tablet="33" desktop="33">
-					<mu-flat-button label="取消订单" class="flat-button" @click="cancelOrder"/>
-				</mu-col>
-			</mu-row>
+			<div style="padding: 18px 0 15px 0; text-align: center; font-size: 14px;">
+				<img :src="carIcon" width="84px"/>
+				<div style="margin-top: 6px">
+					<span class="span1">{{fareTips}}</span>
+				</div>
+			</div>
+			<mu-divider/>
+			<div style="text-align: center; padding: 12px">
+				<mu-raised-button label="返回首页" primary @click="goHome"></mu-raised-button>
+				&nbsp;&nbsp;&nbsp;
+				<mu-raised-button label="乘客到达" primary @click="arriveDestination"></mu-raised-button>
+			</div>
 		</div>
 </template>
 
@@ -41,89 +24,101 @@
 
 	import { Toast } from 'vant'
 	import avater from '../../assets/image/avater.jpg'
+	import car from '../../svg/car.svg'
 
 	export default {
 		data () {
 			return {
-				disable: false,
-				selectorHeight: '',
+				carIcon: car,
+				ls_processingtrip: null,
 
-				// 车信息
-				carBrand: null,		// 品牌
-				carSeries: null,	// 系列
-				carColor: null,		// 车身颜色
-				carPlateNo: null,	// 车牌号码
-
-				// 车主信息
-				avater: avater,		// 头像
-				driverName: null,	// 车主名字
-				driverEvaluate: '评分：4.0'	// 车主评分
+				fareTips: '车费计算中...',
 			}
 		},
 		created () {
-			let _this = this;
-			let ls_tripinfo = JSON.parse(window.localStorage.getItem('T1')) ;
-
-			// 获取车主相关
-			// _this.$axios.get('/api/driver/2')
-			// .then((response) => {
-			// 	console.log(response);
-			// 	// 车辆信息
-			// 	_this.carBrand = response.data.data.carDTO.brand;
-			// 	_this.carSeries = response.data.data.carDTO.series;
-			// 	_this.carColor = response.data.data.carDTO.color + ' • ';
-			// 	_this.carPlateNo = response.data.data.carDTO.plateNo;
-			// 	// 车主信息
-			// 	_this.driverName = response.data.data.drivingLicenseDTO.driverName.substr(0,1) + '师傅';
-			// 	window.localStorage.setItem('DriverInfo', JSON.stringify(response.data.data))
-			// })
-			// .catch((error) => {
-			// 	_this.carBrand = '品牌未知?';
-			// 	_this.carSeries = '';
-			// 	_this.carColor = '颜色? ';
-			// 	_this.carPlateNo = '车牌未知';
-			// 	console.log(error);
-			// })
-
-			// 从订单数据里获取车辆品牌、司机信息
-			if (ls_tripinfo.brand == null) {
-				_this.carBrand = '品牌未知?';
+			if (typeof window.localStorage.getItem('ProcessingTrip') === 'string') {
+				this.ls_processingtrip = JSON.parse(window.localStorage.getItem('ProcessingTrip'));
+				// 如果已完成
+				if (this.ls_processingtrip.orderStatus == 'PROCESSING_COMPLETED') {
+					const toast1 = Toast.loading({
+						duration: 0,
+						forbidClick: true,
+						message: '订单已完成'
+					});
+					let second = 3;
+					const time1 = setInterval(() => {
+						second--;
+						console.log(second);
+						if (second) {
+							toast1.message = '返回首页...';
+						} else {
+							clearInterval(time1);
+							Toast.clear();
+							this.$router.push({name: 'Home'});
+							window.localStorage.removeItem('ProcessingTrip')
+						}
+					}, 1000);
+				}
+			} else if (window.localStorage.getItem('ProcessingTrip') == null) {
+				// 当没有这个字段时，返回首页
+				Toast('出现错误！')
+				this.$router.push({name: 'Home'})
 			} else {
-				_this.carBrand = ls_tripinfo.brand;
+				this.ls_processingtrip = window.localStorage.getItem('ProcessingTrip');
 			}
-			// 品牌系列
-			if (ls_tripinfo.series == null) {
-				_this.carSeries = '';
-			} else {
-				_this.carSeries = ls_tripinfo.series;
-			}
-			// 车身颜色
-			if (ls_tripinfo.color == null) {
-				_this.carColor = '颜色? ';
-			} else {
-				_this.carColor = ls_tripinfo.color;
-			}
-			// 车牌号码
-			if (ls_tripinfo.plateNo == null) {
-				_this.carPlateNo = '车牌未知!';
-			} else {
-				_this.carPlateNo = ls_tripinfo.plateNo;
-			}
-			// 司机Username
-			if (ls_tripinfo.driverName == null) {
-				_this.driverName = '司机师傅';
-			} else {
-				_this.driverName = ls_tripinfo.driverName;
-			}
-			
 		},
 		mounted () {
 			
 		},
 		methods: {
-			cancelOrder () {
-				console.log('取消订单，暂无实现！');
+			goHome () {
 				this.$router.push({name: 'Home'});
+			},
+			arriveDestination () {
+				let _this = this;
+				let ls_distance = window.localStorage.getItem('TripDistance');
+				let ls_duratioin = window.localStorage.getItem('TripDuration');
+				_this.$axios.post('/api/hailingService/tripOrder/confirmArrival', {
+					tripOrderId: _this.ls_processingtrip.tripOrderId,
+					lengthOfMileage: ls_distance,
+					lengthOfTime: ls_duratioin
+				}).then((response) => {
+					// 确认到达后，订单状态从：PROCESSING 变为 PROCESSING_COMPLETE
+					console.log(response);
+					if (response.status == 200) {
+						let tripOrder = response.data.data;
+						window.localStorage.setItem('ProcessingTrip', JSON.stringify(tripOrder));	// 迟点刷新页面会根据 ProcessingTrip 的 OrderStatus 进行判断是否进行页面的跳转
+						_this.$socket.emit('confirmArrival', tripOrder);
+						_this.fareTips = '乘客应支付车费' + response.data.data.totalCost + '元 >'
+						const toast2 = Toast.loading({
+							duration: 0,
+							forbidClick: true,
+							message: '已到达'
+						});
+						let second = 3;
+						const time2 = setInterval(() => {
+							second--;
+							console.log(second);
+							if (second) {
+								toast2.message = '已到达';
+							} else {
+								clearInterval(time2);
+								Toast.clear();
+								// _this.$router.push({name: 'Home'})
+							}
+						}, 1000);
+					}
+				}).catch((error) => {
+					console.log(error);
+					if (error.status == 404) {
+						alert(error.message);
+						// _this.$router.push({name: 'Home'})
+					};
+					if (error.status == 400) {
+						alert(error.message);
+						// _this.$router.push({name: 'Home'})
+					}
+				})
 			}
 		}
 	}
