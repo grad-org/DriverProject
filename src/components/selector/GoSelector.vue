@@ -34,11 +34,15 @@
 					tripOrderId: trip.tripOrderId
 				}).then ((response) => {
 					console.log(response);
+					let tripOrder = response.data.data;
 					window.localStorage.removeItem('AcceptedTrip');	// 删除接单信息缓存
-					window.localStorage.setItem('ProcessingTrip', JSON.stringify(response.data.data));	
+					window.localStorage.setItem('ProcessingTrip', JSON.stringify(tripOrder));
+					// 乘客上车的emit
+					this.$socket.emit('pickUpPassenger', tripOrder);
 					this.$router.push({name: 'CarDriving'});
 				}).catch ((error) => {
 					console.log(error);
+					console.log(error.message);
 					if (error.status == 404) {
 						alert('当前行程订单不存在！')
 					}
