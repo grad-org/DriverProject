@@ -7,12 +7,16 @@
 			:locationIcon="{url: require('../../svg/location.svg'), size: {width: 18, height: 18}}" 
 			@locationSuccess="getLoctionSuccess" @locationError="getLocationError">
 		</bm-geolocation>
-		<bm-marker :position="outsetPoint" 
-			:icon="{url: require('../../svg/outset.svg'), size: {width: 20, height: 31}}" :offset="{width: 0, height: -14}">
-		</bm-marker>
-		<bm-marker :position="destinationPoint" 
-			:icon="{url: require('../../svg/destination.svg'), size: {width: 20, height: 31}}" :offset="{width: 0, height: -14}">
-		</bm-marker>
+		<bml-lushu
+			@stop = "stopLS"
+			:path = "path"
+			:icon = "icon"
+			:play = "play"
+			:autoView = "true"
+			:speed = "3000"
+			:rotation = "true"
+			v-if="!isCompleted">
+		</bml-lushu>
 	</baidu-map>
 	
 </template>
@@ -20,8 +24,12 @@
 <script>
 
 	import MapStyle from './js/map-style.js'
+	import {BmlLushu} from 'vue-baidu-map'
 
 	export default {
+		components: {
+			BmlLushu
+		},
 		data () {
 			return {
 				center: null,
@@ -32,17 +40,30 @@
 
 				map: null,	// 指定map对象
 				BMap: null,	// 指定BMap对象
-				ls_outset: null,
+				ls_processingtrip: null,
+
+				// 路书
+				play: true,
+				// speed: null,
+				path: [],
+				icon: {
+					url: require('../../svg/carmoving.svg'),
+					size: {width: 52, height: 26},
+					opts: {anchor: {width: 27, height:13}}
+				},
+				isCompleted: false,		// 判断是否已完成
 			}
 		},
 		created () {
 			// this.center = this.$store.state.currentCity
 			this.styleJson = MapStyle.style();
-			this.ls_outset = JSON.parse(window.localStorage.getItem('Outset'))
-			this.ls_destination = JSON.parse(window.localStorage.getItem('Destination'))
-			this.center = this.ls_outset.point;
-			this.outsetPoint = this.ls_outset.point;
-			this.destinationPoint = this.ls_destination.point;
+			this.ls_processingtrip = JSON.parse(window.localStorage.getItem('ProcessingTrip'));
+			if (this.ls_processingtrip.orderStatus == 'PROCESSING_COMPLETED') {
+				this.isCompleted = true;
+			} else {
+				this.center = this.ls_processingtrip.departureLocation;
+				// console.log('222222222',JSON.parse(window.localStorage.getItem('AAAA')));
+			}
 		},
 		mounted () {
 			
@@ -55,8 +76,8 @@
 				_this.BMap = BMap;
 
 				// 驾车线路类：http://lbsyun.baidu.com/cms/jsapi/reference/jsapi_reference.html#a7b16
-				let outset1 = new BMap.Point(_this.outsetPoint.lng, _this.outsetPoint.lat);
-				let destination1 = new BMap.Point(_this.destinationPoint.lng, _this.destinationPoint.lat);
+				let outset1 = new BMap.Point(_this.ls_processingtrip.departureLocation.lng, _this.ls_processingtrip.departureLocation.lat);
+				let destination1 = new BMap.Point(_this.ls_processingtrip.destinationLocation.lng, _this.ls_processingtrip.destinationLocation.lat);
 				//三种驾车策略：最少时间，最短距离，避开高速，而采用的默认策略是：最少时间
 				var routePolicy = [BMAP_DRIVING_POLICY_LEAST_TIME, BMAP_DRIVING_POLICY_LEAST_DISTANCE, BMAP_DRIVING_POLICY_AVOID_HIGHWAYS];
 				// 检索完成后的回调函数
@@ -69,19 +90,7 @@
 					let duration = (plan.getDuration(false)/60).toFixed(0);
 					window.localStorage.setItem('TripDistance', distance);
 					window.localStorage.setItem('TripDuration', duration);
-					_this.$axios.get('/api/fare/predictFare?lengthOfMileage=' + distance + '&lengthOfTime=' + duration)
-					.then((response) => {
-						// console.log(response)
-						// window.localStorage.setItem('TripPredictFare', JSON.stringify(response.data.data.totalCost));
-						let d1 = response.data.data;
-						_this.$store.dispatch('predictFare', {fareRuleId: d1.fareRuleDTO.fareRuleId, mileage: d1.lengthOfMileage, duration: d1.lengthOfTime, totalCost: d1.totalCost})
-					})
-					.catch((error) => {
-						console.log(error)
-						if (error.status == 400) {
-							_this.tripFare = false;
-						}
-					})
+					_this.path = results.getPlan(0).getRoute(0).getPath();
 				};
 
 				var polylineComplete = function (routes) {
@@ -101,6 +110,10 @@
 					}
 				);
 				transit.search(outset1,destination1);
+			},
+			// 停止路书
+			stopLS () {
+				this.play = false;
 			},
 			getLoctionSuccess (result) {
 				console.log('result');
