@@ -29,7 +29,7 @@
 			</mu-list>
 		</mu-drawer>
 		<!-- 顶栏区域 -->
-		<mu-appbar ref="barDiv" title="蔚蓝出行(司机端)">
+		<mu-appbar ref="barDiv" title="蔚蓝出行 - 车主端">
 			<mu-icon-button icon="menu" slot="left" @click="toggle(true)"/>
 			<mu-flat-button color="#fff" :label="selectedCity" slot="right"/>
 			<mu-icon-button icon="notifications" slot="right"></mu-icon-button>
