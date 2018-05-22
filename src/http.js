@@ -6,7 +6,7 @@ import store from './store.js'
 
 // axios 配置
 axios.defaults.timeout = 2500	// 覆写库的超时默认值，现在在超时前，所有请求都会等待 2.5 秒
-axios.defaults.baseURL = 'http://online-ride-hailing.herokuapp.com/'
+axios.defaults.baseURL = 'http://forcar.vip:8080'
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8'
 
 // http request 请求拦截器
@@ -37,6 +37,7 @@ axios.interceptors.response.use(
 			}
 		}
 		return Promise.reject(error.response.data)
+		// return Promise.reject(error.response)
 	}
 )
 
