@@ -10,8 +10,6 @@
 
 	import BaiduMapGo from '../map/BaiduMapGo'
 	import GoSelector from '../selector/GoSelector'
-	import SockJS from '../../../static/utils/sockjs.js'
-	import Stomp from 'stompjs'
 
 	export default {
 		components: {
@@ -34,10 +32,10 @@
 				this.$router.push({name: 'Home'});
 			} else if (ls_acceptedtrip.departure == '当前位置') {
 				// 这种情况是，乘客发布行程时，起点无法识别具体一个位置名称
-				this.passengerLocationTitle = '前往接乘客...'
+				this.passengerLocationTitle = '前往起点接乘客...'
 			}
 			else {
-				this.passengerLocationTitle = '前往' + ls_acceptedtrip.departure;
+				this.passengerLocationTitle = '前往' + ls_acceptedtrip.departure + '...';
 			};
 			this.initHeight();
 			this.setMapHeight();
@@ -46,26 +44,6 @@
 			
 		},
 		methods: {
-
-			// 发送位置到对应乘客，后续需要完成的是，隔N秒发送一次位置
-			// sendLocation () {
-			// 	let _this = this;
-			// 	let token = window.localStorage.getItem('Token')
-			// 	// 创建连接
-			// 	_this.stompClient.connect(
-			// 		// headers
-			// 		{'Auth-Token': token},
-			// 		// 连接成功的回调函数
-			// 		function connectCallback (frame) {
-			// 			_this.stompClient.send('/api/queue/hailingService/car/uploadCarLocation/')
-			// 		},
-			// 		// 连接失败的回调函数
-			// 		function errorCallback (error) {
-			// 			console.log(error);
-			// 			console.log('失败回调',error);
-			// 		}
-			// 	)
-			// },
 			initHeight () {
 				let _this = this
 				window.onresize = function () {
@@ -79,7 +57,7 @@
 				}
 			},
 			setMapHeight () {
-				this.$nextTick (() => {
+				this.$nextTick(() => {
 					this.barHeight = this.$refs.barDiv.$el.clientHeight;
 					this.selectHeight = this.$refs.selectDiv.$el.clientHeight;
 					// 页面加载后，对地图高度进行设置
@@ -95,12 +73,12 @@
 		watch: {
 			// 如果 fullHeight 发生改变，这个函数就会运行
 			fullHeight (val) {
-				if(!this.timer) {
-					this.fullHeight = val
-					this.timer = true
-					let that = this
+				let _this = this
+				if(!_this.timer) {
+					_this.fullHeight = val
+					_this.timer = true
 					setTimeout(function () {
-						that.timer = false
+						_this.timer = false
 					}, 1000)
 				}
 				// console.log("触发watch的fullHeight")
