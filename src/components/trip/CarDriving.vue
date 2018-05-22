@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<mu-appbar ref="barDiv" title="行车中" style="text-align: center">
+		<mu-appbar ref="barDiv" :title="destinationLocationTitle" style="text-align: center">
 		</mu-appbar>
 		<baidu-map-driving ref="mapDiv" :style="{height: mapHeight}"></baidu-map-driving>
 		<driving-selector ref="selectDiv"></driving-selector>
@@ -23,14 +23,23 @@
 				barHeight: '',
 				selectHeight: '',
 				mapHeight: '',
+
+				// 终点地点名称
+				destinationLocationTitle: '前往目的地...'
 			}
 		},
 		created () {
-
-		},
-		mounted () {
+			let ls_processingtrip = JSON.parse(window.localStorage.getItem('ProcessingTrip'));
+			if (ls_processingtrip == null) {
+				this.$router.push({name: 'Home'});
+			} else {
+				this.destinationLocationTitle = '前往' + ls_processingtrip.destination + '途中...';
+			};
 			this.initHeight();
 			this.setMapHeight();
+		},
+		mounted () {
+			
 		},
 		methods: {
 			goHome () {
