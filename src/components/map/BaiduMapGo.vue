@@ -44,11 +44,7 @@
 
 
 <script>
-	// http://api.map.baidu.com/library/LuShu/1.2/src/LuShu_min.js
-	// http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js
 	import MapStyle from './js/map-style.js'
-	import SockJS from '../../../static/utils/sockjs.js'
-	import Stomp from 'stompjs'
 	import {BmlLushu} from 'vue-baidu-map'
 	import { NoticeBar } from 'vant'
 	import { Toast } from 'vant'
@@ -74,22 +70,19 @@
 				ls_acceptedtrip: null,
 
 				btn_seen: false,
-				// 用于创建连接
-				stompClient: Stomp.over(new SockJS('http://online-ride-hailing.herokuapp.com/orh')),
 
 				// 路书
 				play: false,
 				// speed: null,
 				path: [],
 				icon: {
-					url: require('../../assets/image/car.png'),
+					url: require('../../svg/carmoving.svg'),
 					size: {width: 52, height: 26},
 					opts: {anchor: {width: 27, height:13}}
 				}
 			}
 		},
 		created () {
-			// this.center = this.$store.state.currentCity
 			this.styleJson = MapStyle.style();
 			this.ls_acceptedtrip = JSON.parse(window.localStorage.getItem('AcceptedTrip'));
 		},
@@ -114,23 +107,9 @@
 					_this.autoLocationPoint = {lng: parseFloat(r.longitude), lat: parseFloat(r.latitude)};		// 自定义覆盖物
 					_this.initLocation = true;
 					_this.$store.dispatch('localPoint', {title: null, address: null, point: r.point})
-
-					// 获取位置后，推送司机位置给指定乘客
-					_this.stompClient.connect(
-						// headers
-						{'Auth-Token': token},
-						function connectCallback (frame) {
-							console.log('连接成功');
-							Toast('连接成功！')
-							_this.sendLocation();
-						},
-						function errorCallback (error) {
-							console.log('连接失败', error);
-							Toast('连接失败！请重新刷新页面！')
-						}
-					)
-
-					// 从司机的位置，前往起点
+					// 发送当前位置
+					_this.sendLocation();
+					// 司机的位置→前往起点，路线规划
 					let myLocation1 = new BMap.Point(parseFloat(r.longitude), parseFloat(r.latitude));
 					let passengerLocation1 = new BMap.Point(_this.ls_acceptedtrip.departureLocation.lng, _this.ls_acceptedtrip.departureLocation.lat);
 					//三种驾车策略：最少时间，最短距离，避开高速，而采用的默认策略是：最少时间
@@ -157,23 +136,6 @@
 							_this.timer = setTimeout(() => {
 								_this.seen = false;
 							}, 10000);
-							// 
-							// for (let j = 0; j < plan.getNumRoutes(); j++) {
-							// 	let route = plan.getRoute(j);
-							// 	arrPois = arrPois.concat(route.getPath());
-							// }
-							// map.addOverlay(new BMap.Polyline(arrPois, {storkeColor: 'red', strokeOpacity: 0.5, strokeStyle: 'dashed'}));
-							// map.setViewport(arrPois);
-							// 路书
-							// var lushu = new BMapLib.LuShu(map, arrPois, {
-							// 	defaultContext: '',	// "从天安门到百度大厦"
-							// 	autoView: true,		// 是否开启自动视野调整，如果开启那么路书在运动过程中会根据视野自动调整
-							// 	icon: new BMap.Icon('http://lbsyun.baidu.com/jsdemo/img/car.png', new BMap.Size(52,26),{anchor : new BMap.Size(27, 13)}),
-							// 	speed: 4500,
-							// 	enableRotation: true,	// 是否设置marker随着道路的走向进行旋转
-							// 	landmarkPois: []
-							// })
-
 						}
 					}
 					var transit = new BMap.DrivingRoute(
@@ -207,11 +169,10 @@
 			stopLS () {
 				this.play = false;
 			},
-			// 发送位置，让用户可见
+			// 发送位置，让乘客可见
 			sendLocation () {
 				let currentLocation = {carId: this.ls_acceptedtrip.carId, lng: this.$store.state.localPoint.point.lng, lat: this.$store.state.localPoint.point.lat};
-				this.stompClient.send('/api/queue/hailingService/car/uploadCarLocation/' + this.ls_acceptedtrip.passengerUsername, {},
-					JSON.stringify(currentLocation))
+				this.$socket.emit('uploadCarLocation', {'targetUsername': this.ls_acceptedtrip.passengerUsername, 'data': currentLocation});
 			},
 			// 定位回调
 			getLoctionSuccess (result) {
@@ -223,14 +184,6 @@
 			},
 			getLocationError () {
 				alert("获取位置失败，请重试！")
-			},
-			closeSubscribe () {
-				if (true) {
-
-				}
-			},
-			closeConnect () {
-				this.stompClient.disconnect();
 			}
 		}
 	}
