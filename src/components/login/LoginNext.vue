@@ -94,14 +94,15 @@
 							// 判断是否为已认证车主
 							_this.$axios.get('/api/auth/user')
 							.then( (response) => {
-								console.log(response);
+								console.log('获取用户信息数据返回：', response);
 								if (response.status == 200) {
-									_this.$store.dispatch('userId', response.data.data.userId);
-									_this.$store.dispatch('driverId', response.data.data.driverId);
+									let userResponse = response.data.data;
+									_this.$store.dispatch('userId', userResponse.userId);
+									_this.$store.dispatch('driverId', userResponse.driverId);
 									// JSON.stringify() 将JSON对象转化成字符串  
-									window.localStorage.setItem('UserId' ,response.data.data.userId);
-									window.localStorage.setItem('UserInfo' ,JSON.stringify(response.data.data));
-									_this.ls_userinfo = response.data.data;
+									window.localStorage.setItem('UserId' ,userResponse.userId);
+									window.localStorage.setItem('UserInfo' ,JSON.stringify(userResponse));
+									_this.ls_userinfo = userResponse;
 									if (_this.ls_userinfo.driverId == '' || _this.ls_userinfo.driverId == null || _this.ls_userinfo.driverId == undefined) {
 										// 未认证，前往认证车主页面
 										console.log('未认证车主');
@@ -118,7 +119,8 @@
 											} else {
 												clearInterval(timer);
 												Toast.clear();
-												_this.$router.push({name: 'Authentication'})
+												_this.$router.push({name: 'Authentication'});
+												window.location.reload();	// 页面重新加载
 											}
 										}, 1000);
 									} else {
@@ -136,7 +138,8 @@
 											} else {
 												clearInterval(timer);
 												Toast.clear();
-												_this.$router.push({name: 'Home'})
+												_this.$router.push({name: 'Home'});
+												window.location.reload();	// 页面重新加载
 											}
 										}, 1000);
 									}
