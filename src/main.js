@@ -11,6 +11,8 @@ import 'muse-ui/dist/muse-ui.css'
 import 'muse-ui/dist/theme-light.css'
 import BaiduMap from 'vue-baidu-map'
 import VueSocketio from 'vue-socket.io'
+import Vant from 'vant'
+import 'vant/lib/vant-css/index.css'
 
 Vue.config.productionTip = false
 Vue.prototype.$axios = axios
@@ -20,6 +22,7 @@ Vue.use(BaiduMap, {
 	ak: 'AgWMKM9B5sGxq6pgPsuymZp8ZrwqYtj7'
 })
 Vue.use(VueSocketio, 'http://forcar.vip:8081?token='+ store.state.token + '&role=role_driver')
+Vue.use(Vant)
 
 new Vue({
 	el: '#app',
