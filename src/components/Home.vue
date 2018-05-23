@@ -36,6 +36,18 @@
 				</mu-list>
 			</div>
 		</div>
+		<!-- 车主认证审核中弹窗 -->
+		<mu-dialog :open="openDialog1" title="抱歉！" @close="closeDialog1">
+			您的车主认证正在审核中，经审核通过后，方可听单。
+			<mu-flat-button slot="actions" @click="closeDialog1" primary label="取消"/>
+			<mu-flat-button slot="actions" primary @click="closeDialog1" label="确定"/>
+		</mu-dialog>
+		<!-- 未通过车主认证弹窗 -->
+		<mu-dialog :open="openDialog2" title="抱歉！" @close="hideDialog2">
+			您的车主认证未通过审核，您可以尝试再次提交申请！
+			<mu-flat-button slot="actions" @click="hideDialog2" primary label="取消"/>
+			<mu-flat-button slot="actions" primary @click="closeDialog2" label="前往认证"/>
+		</mu-dialog>
 	</div>
 </template>
 
@@ -64,19 +76,45 @@
 				order_disabled: false,
 				stop_disabled: true,
 				List: false,
+				driverStatus: null,	// 车主当前的认证状态，有APPROVED、UNAPPROVED、PENDING_REVIEW
+				openDialog1: false,	// 车主认证审核中的弹窗
+				openDialog2: false,	// 车主认证未通过的弹窗
 
 				activeTab: 'published',	// 默认激活的Tab
 				
 				publishedTripLists: [],
 				publishingTripLists: [],
 				timeInterval: null,		// 定时器对象
+				enableListenOrder: false,	// 可以接单判断，根据车主认证状态判断
 			}
 		},
 		sockets: {
 			
 		},
 		created () {
-			
+			// 获取车主认证状态，继而限制一些功能
+			this.$axios.get('/api/driver/' + this.$store.state.driverId).then(
+				(response) => {
+					console.log('获取车主资料返回数据：', response);
+					let status = response.data.data.driverStatus;	// 获取当前认证车主的状态
+					if (status == 'APPROVED') {
+						// 只有车主认证通过了，才可以听单
+						this.enableListenOrder = true;
+						this.driverStatus = status;
+					} else if (status == 'PENDING_REVIEW') {
+						// 待审核
+						this.enableListenOrder = false;
+						this.driverStatus = status;
+					} 
+					else {
+						// 审核不通过
+						this.enableListenOrder = false;
+						this.driverStatus = status;
+					}
+				}
+			).catch((error) => {
+					console.log('获取车主资料错误返回：', error);
+			});
 		},
 		mounted () {
 			this.$socket.on('cancelTrip', function (trip) {
@@ -87,35 +125,44 @@
 			// 用于订阅乘客发布的行程
 			getTrip () {
 				// 变量
-				let _this = this
-				let token = window.localStorage.getItem('Token');
+				let _this = this;
+				if (_this.enableListenOrder) {
+					
+					// 设置按钮可见不可见
+					_this.order_disabled = true;
+					_this.stop_disabled = false;
+					_this.List = true;
 
-				// 设置按钮可见不可见
-				_this.order_disabled = true;
-				_this.stop_disabled = false;
-				_this.List = true;
+					_this.sendLocation();	// 开始听单，立刻向用户发送位置
+					// 设置定时器
+					clearInterval(_this.timeInterval);
+					_this.timeInterval = setInterval(function () {
+						_this.sendLocation();
+						console.log('重复定时器，30秒发送一次！')
+					}, 30000)
 
-				_this.sendLocation();	// 开始听单，立刻向用户发送位置
-				// 设置定时器
-				clearInterval(_this.timeInterval);
-				_this.timeInterval = setInterval(function () {
-					_this.sendLocation();
-					console.log('重复定时器，30秒发送一次！')
-				}, 30000)
-
-				// 查询已发布的行程
-				_this.$axios.get('/api/trip/search/findPublishedTripByCondition')
-				.then((response) => {
-					console.log('查询已发布行程返回：', response.data.data)
-					_this.publishedTripLists = response.data.data;
-					console.log('publishedTripLists', _this.publishedTripLists);
-				})
-				// 监听实时发布行程
-				_this.$socket.on('publishTrip', function (trip) {
-					console.log('监听实时发布行程返回：', trip);
-					_this.publishingTripLists.push(trip);
-				});
-
+					// 查询已发布的行程
+					_this.$axios.get('/api/trip/search/findPublishedTripByCondition')
+					.then((response) => {
+						console.log('查询已发布行程返回：', response.data.data)
+						_this.publishedTripLists = response.data.data;
+						console.log('publishedTripLists', _this.publishedTripLists);
+					})
+					// 监听实时发布行程
+					_this.$socket.on('publishTrip', function (trip) {
+						console.log('监听实时发布行程返回：', trip);
+						_this.publishingTripLists.push(trip);
+					});
+				} else {
+					if (_this.driverStatus == 'PENDING_REVIEW') {
+						console.log('认证中，需要在认证通过后才能接单');
+						_this.openDialog1 = true;
+					};
+					if (_this.driverStatus == 'UNAPPROVED') {
+						console.log('未通过认证');
+						_this.openDialog2 = true;
+					}
+				};
 			},
 			// 停止接单，用于关闭连接
 			stopOrder () {
@@ -130,7 +177,6 @@
 			sendLocation () {
 				let _this = this;
 				let currentLocation = {carId: 1, lng: _this.$store.state.localPoint.point.lng, lat: _this.$store.state.localPoint.point.lat};
-				// _this.stompClient.send('/api/hailingService/car/uploadCarLocation', {}, JSON.stringify(currentLocation))
 				// this.$socket.join('broadcastTrip');
 				// 测试地址
 				// this.$socket.emit('broadcastCarLocation', {carId: 1, lng: '110', lat: '23'});
@@ -140,7 +186,6 @@
 			// 接单
 			acceptOrder (orderIndex) {
 				let _this = this;
-				console.log('司机接单，订单是：' + orderIndex)
 				// 已发布行程
 				if (_this.activeTab == 'published') {
 					// 在已发布行程栏，车主受理订单，通知乘客
@@ -234,6 +279,18 @@
 			},
 			handleTabChange (val) {
 				this.activeTab = val;
+			},
+			// 认证审核中对话框关闭事件
+			closeDialog1 () {
+				this.openDialog1 = false;
+			},
+			// 未通过认证对话框关闭事件
+			closeDialog2 () {
+				this.openDialog2 = false;
+				this.$router.push({name: 'Authentication'});
+			},
+			hideDialog2 () {
+				this.openDialog2 = false;
 			}
 		}
 	}
