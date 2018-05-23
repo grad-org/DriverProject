@@ -1,0 +1,37 @@
+
+/* 编辑页面的面板的title */
+.block_title {
+	margin: 0;
+	font-weight: 400;
+	font-size: 14px;
+	color: rgba(69, 90, 100, 0.6);
+	padding: 15px 15px 8px 15px;
+}
+.block_title_userinfo {
+	margin: 0;
+	font-weight: 400;
+	font-size: 14px;
+	color: rgba(69, 90, 100, 0.6);
+	padding: 8px 15px;
+}
+.van-cell__title {
+	min-width: 90px;
+}
+.van-cell__value {
+	text-align: left;
+}
+
+.van-cell__value--link {
+	padding-right: 15px;
+	text-align: right
+}
+
+/* cell右图标覆盖 */
+.icon-cover {
+	margin-right: 0;
+	font-size: 12px;
+}
+
+.link-color-cover {
+	color: #999
+}
