@@ -12,9 +12,9 @@
   "dependencies": {
     "axios": "^0.18.0",
     "muse-ui": "^2.1.0",
-    "vant": "^1.0.8",
+    "vant": "^1.0.4",
     "vue": "^2.5.2",
-    "vue-baidu-map": "^0.21.7",
+    "vue-baidu-map": "^0.21.10",
     "vue-router": "^3.0.1",
     "vue-socket.io": "^2.1.1-b",
     "vuex": "^3.0.1"
