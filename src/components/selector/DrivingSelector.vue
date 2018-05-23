@@ -55,7 +55,7 @@
 							clearInterval(time1);
 							Toast.clear();
 							this.$router.push({name: 'Home'});
-							window.localStorage.removeItem('ProcessingTrip')
+							window.localStorage.removeItem('ProcessingTrip');
 						}
 					}, 1000);
 				}
@@ -104,7 +104,8 @@
 							} else {
 								clearInterval(time2);
 								Toast.clear();
-								// _this.$router.push({name: 'Home'})
+								window.localStorage.removeItem('ProcessingTrip');
+								_this.$router.push({name: 'Home'})
 							}
 						}, 1000);
 					}
