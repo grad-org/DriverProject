@@ -3,19 +3,19 @@
 	<div>
 		<mu-drawer :width="width" :zDepth="zDepth" :open="open_drawer" :docked="docked" @close="toggle()">
 			<div class="user-info" :style="userBackground">
-				<mu-paper class="paper" circle :zDepth="2" >
+				<mu-paper class="paper" circle :zDepth="1" >
 					<img :src="avater" style="width: 100%; height: 100%"/>
 				</mu-paper>
-				<mu-list-item title="Frankie" describeText="13432862054" >
-					<mu-icon value="info" slot="right" color="#333"/>
+				<mu-list-item :title="nickname" :describeText="username" >
+					<mu-icon value="portrait" slot="right" color="#666"/>
 				</mu-list-item>
 			</div>
 			<mu-list>
-				<mu-list-item title="行程" rightIcon="keyboard_arrow_right">
+				<mu-list-item title="行程" @click="goHistoryTrip">
 					<mu-icon slot="left" value="local_taxi" />
 				</mu-list-item>
-				<mu-list-item title="钱包">
-					<mu-icon slot="left" value="account_balance_wallet" />
+				<mu-list-item title="钱包" @click="goWallet">
+					<mu-icon slot="left" value="account_balance_wallet"/>
 				</mu-list-item>
 				<mu-list-item title="设置">
 					<mu-icon slot="left" value="settings" />
@@ -24,7 +24,7 @@
 					<mu-icon slot="left" value="live_help"/>
 				</mu-list-item>
 				<mu-list-item title="退出" @click="logout">
-					<mu-icon slot="left" value="close"/>
+					<mu-icon slot="left" value="exit_to_app"/>
 				</mu-list-item>
 			</mu-list>
 		</mu-drawer>
@@ -51,31 +51,50 @@
 				zDepth: 0,
 				width: "60%",
 				// avater
-				avater: avater,
+				avater: null,
+				nickname: '',
+				username: '',
 				userBackground: {
-					backgroundImage: 'url(' + require('../assets/image/bg.jpg') + ')',
+					backgroundImage: 'url(' + require('../assets/image/bg3.jpg') + ')',
 					backgroundRepeat: "no-repeat",
 					backgroundSize: "100% auto",
 				},
-				ls_userinfo: ''
 			}
 		},
 		created () {
 			let _this = this;
-			let ls_token = window.localStorage.getItem('Token');
 			let ls_userinfo = null;
+			this.avater = this.$serverUrl + '/images/user/' + this.$store.state.userId + '.jpg';
 			if (typeof window.localStorage.getItem('UserInfo') === 'string') {
 				ls_userinfo = JSON.parse(window.localStorage.getItem('UserInfo'));
+				this.avater = this.$serverUrl + '/images/user/' + ls_userinfo.userId + '.jpg';
 			} else {
+				// UserInfo为null的情况
 				ls_userinfo = window.localStorage.getItem('UserInfo');
 			}
-
-			// 需要完善缓存头像到本地、然后判断需不需要请求http
-			// 本地缓存图片的方法还没实现，暂时头像统一采用默认头像
-			_this.nickname = _this.ls_userinfo.nickname;
-			_this.username = _this.ls_userinfo.username;
-			_this.avater = avater;
-			
+			if (ls_userinfo == null || ls_userinfo == undefined || ls_userinfo == '') {
+				// 本地没有数据时发起get请求，获取数据
+				_this.$axios.get('/api/auth/user')
+				.then( (response) => {
+					console.log(response);
+					if (response.status == 200) {
+						_this.$store.dispatch('userId', response.data.data.userId);
+						_this.nickname = response.data.data.nickname;
+						_this.username = response.data.data.username;
+						// JSON.stringify() 将JSON对象转化成字符串  
+						window.localStorage.setItem('UserInfo' ,JSON.stringify(response.data.data));
+						_this.avater = this.$serverUrl + '/images/user/' + response.data.data.userId + '.jpg';
+					}
+				})
+				.catch ( (error) => {
+					console.log(error);
+				})
+			} else {
+				// localstorage已存在本地信息，不需要再发起http请求
+				// 本地缓存图片的方法还没实现，暂时头像统一采用默认头像
+				_this.nickname = ls_userinfo.nickname;
+				_this.username = ls_userinfo.username;
+			}
 		},
 		mounted() {
 			
@@ -89,6 +108,14 @@
 			toggle(flag) {
 				this.open_drawer = !this.open_drawer;
 				this.docked = !flag;
+			},
+			goHistoryTrip () {
+				this.open_drawer = false;
+				this.$router.push({name: 'HistoryTrip'});
+			},
+			goWallet () {
+				this.open_drawer = false;
+				this.$router.push({name: 'Wallet'});
 			},
 			logout() {
 				this.open_drawer = false;
