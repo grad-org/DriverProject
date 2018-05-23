@@ -1,0 +1,19 @@
+.span1 {
+	display: inline-block;
+	font-size: 14px;
+	color: #757575
+}
+.span-rule {
+	display: block;
+	text-align: center;
+	font-size: 18px;
+	font-weight: bold;
+	color: #424242
+}
+.span-rule-header {
+	display: block;
+	font-size: 15px;
+	font-weight: bold;
+	color: #616161;
+	margin-bottom: 6px;
+}
