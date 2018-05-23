@@ -9,6 +9,9 @@ import LoginNext from '@/components/login/LoginNext'
 import Register from '@/components/login/Register'
 import Authentication from '@/components/Authentication'
 import HandleTrip from '@/components/trip/HandleTrip'
+import HistoryTrip from '@/components/trip/HistoryTrip'
+import TripDetail from '@/components/trip/TripDetail'
+import Wallet from '@/components/user/Wallet'
 import CarDriving from '@/components/trip/CarDriving'
 
 Vue.use(VueRouter)
@@ -50,6 +53,33 @@ const router = new VueRouter({
 			path: '/register',
 			name: 'Register',
 			component: Register
+		},
+		{
+			path: '/trip/history',
+			name: 'HistoryTrip',
+			meta: {
+				requireAuth: true,
+				requireAuthDriver: true
+			},
+			component: HistoryTrip
+		},
+		{
+			path: '/trip/history/detail',
+			name: 'TripDetail',
+			meta: {
+				requireAuth: true,
+				requireAuthDriver: true
+			},
+			component: TripDetail
+		},
+		{
+			path: '/user/wallet',
+			name: 'Wallet',
+			meta: {
+				requireAuth: true,
+				requireAuthDriver: true
+			},
+			component: Wallet
 		},
 		{
 			path: '/trip/handling',
