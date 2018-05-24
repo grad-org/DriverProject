@@ -40,7 +40,8 @@
 <script>
 
 	import { Toast } from 'vant'
-	import avater from '../assets/image/avater.jpg'
+	// import avater from '../assets/image/avater.jpg'
+	import driverAvater from '../assets/image/driverdefault.png'
 
 	export default {
 		data() {
@@ -64,7 +65,18 @@
 		created () {
 			let _this = this;
 			let ls_userinfo = null;
-			this.avater = this.$serverUrl + '/images/user/' + this.$store.state.userId + '.jpg';
+			// 获取用户头像
+			_this.$axios.get('/images/user/' + this.$store.state.userId + '.jpg').then(
+				(response) => {
+					_this.avater = this.$serverUrl + '/images/user/' + ls_userinfo.userId + '.jpg';
+				}
+			).catch((error) => {
+				_this.avater = driverAvater;
+				// console.log(error);
+				if (error.status == 404) {
+					console.log('当前用户没有设置头像！');
+				}
+			});
 			if (typeof window.localStorage.getItem('UserInfo') === 'string') {
 				ls_userinfo = JSON.parse(window.localStorage.getItem('UserInfo'));
 				this.avater = this.$serverUrl + '/images/user/' + ls_userinfo.userId + '.jpg';
