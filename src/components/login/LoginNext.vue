@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div :style="{height: fullHeight}" class="all">
 		<span @click="goHome"><logo id="logo" height="48px" ></logo></span>
 		<div id="container">
 			<mu-col width="100%" tablet="100" desktop="100">
@@ -34,6 +34,7 @@
 		},
 		data () {
 			return {
+				fullHeight: document.documentElement.clientHeight + 'px',
 				fullWidth: true,
 				value_password: '',
 				errorText_password: '',
@@ -44,8 +45,8 @@
 			}
 		},
 		created () {
-			// console.log('读取LoginNext的token：'+ this.$store.state.token)
-			// console.log(this.$route.path)
+			this.initHeight();
+			this.setMapHeight();
 		},
 		mounted (){
 			// 当直接在地址栏输入 /login/2 时，重定向返回登录
@@ -119,7 +120,7 @@
 											} else {
 												clearInterval(timer);
 												Toast.clear();
-												_this.$router.push({name: 'Authentication'});
+												_this.$router.push({name: 'Welcome'});
 												window.location.reload();	// 页面重新加载
 											}
 										}, 1000);
@@ -175,6 +176,35 @@
 			},
 			closeDialog () {
 				this.dialog = false
+			},
+			initHeight () {
+				let _this = this;
+				window.onresize = function () {
+					return (()=> {
+						// 浏览器内容可视高度
+						window.fullHeight = document.documentElement.clientHeight;
+						_this.fullHeight = window.fullHeight + 'px';
+					}) ()
+				}
+			},
+			setMapHeight () {
+				this.$nextTick (() => {
+					this.fullHeight = document.documentElement.clientHeight + 'px';
+				})
+			}
+		},
+		watch: {
+			// 如果 fullHeight 发生改变，这个函数就会运行
+			fullHeight (val) {
+				if(!this.timer) {
+					this.fullHeight = val
+					this.timer = true
+					let that = this
+					setTimeout(function () {
+						that.timer = false
+					}, 1000)
+				}
+				// console.log("触发watch的fullHeight")
 			}
 		}
 	}
@@ -182,4 +212,7 @@
 
 <style scoped>
 	@import url(./css/login.css);
+	.all {
+		background: #fff
+	}
 </style>

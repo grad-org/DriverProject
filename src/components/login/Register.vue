@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div :style="{height: fullHeight}" class="all">
 		<span @click="goHome"><logo id="logo" height="48px" ></logo></span>
 		<div id="container" style="height: 250px">
 			<mu-col width="100%" tablet="100" desktop="100">
@@ -46,6 +46,7 @@
 		},
 		data () {
 			return {
+				fullHeight: document.documentElement.clientHeight + 'px',
 				fullWidth: true,
 				dialog: false,
 				errorTips: '',
@@ -59,6 +60,10 @@
 				errorText_password: '',
 				errorText_password_verify: ''
 			}
+		},
+		created () {
+			this.initHeight();
+			this.setMapHeight();
 		},
 		methods: {
 			goHome () {
@@ -142,6 +147,21 @@
 			},
 			closeDialog () {
 				this.dialog = false
+			},
+			initHeight () {
+				let _this = this;
+				window.onresize = function () {
+					return (()=> {
+						// 浏览器内容可视高度
+						window.fullHeight = document.documentElement.clientHeight;
+						_this.fullHeight = window.fullHeight + 'px';
+					}) ()
+				}
+			},
+			setMapHeight () {
+				this.$nextTick (() => {
+					this.fullHeight = document.documentElement.clientHeight + 'px';
+				})
 			}
 		}
 	}
@@ -149,4 +169,7 @@
 
 <style scoped>
 	@import url(./css/login.css);
+	.all {
+		background: #fff
+	}
 </style>
