@@ -7,7 +7,8 @@ import Home from '@/components/Home'
 import Login from '@/components/login/Login'
 import LoginNext from '@/components/login/LoginNext'
 import Register from '@/components/login/Register'
-import Authentication from '@/components/Authentication'
+import Authentication from '@/components/authentication/Authentication'
+import Welcome from '@/components/authentication/Welcome'
 import HandleTrip from '@/components/trip/HandleTrip'
 import HistoryTrip from '@/components/trip/HistoryTrip'
 import TripDetail from '@/components/trip/TripDetail'
@@ -30,6 +31,14 @@ const router = new VueRouter({
 				requireAuthDriver: true
 			},
 			component: Home
+		},
+		{
+			path: '/authentication/welcome',
+			name: 'Welcome',
+			meta: {
+				requireAuth: true
+			},
+			component: Welcome
 		},
 		{
 			path: '/authentication',
