@@ -19,19 +19,19 @@
 		</div>
 		<!-- 提现对话框 -->
 		<mu-dialog :open="withdrawDialog3" title="提现金额" @close="closeWithdrawDialog3">
-			<mu-text-field v-model="withdrawAmount" :hintText="'最低不能超过'+ balance + '元'"/><br/>
+			<mu-text-field v-model="withdrawAmount" :hintText="'最低不能超过'+ balance + '元'" :fullWidth="true"/><br/>
 			<mu-flat-button slot="actions" @click="closeWithdrawDialog3" primary label="取消"/>
 			<mu-flat-button slot="actions" primary @click="withdraw" label="确定"/>
 		</mu-dialog>
 		<!-- 绑定支付宝 -->
-		<mu-dialog :open="bindDialog1" title="您的支付宝账号：" @close="closebindDialog1">
-			绑定界面
+		<mu-dialog :open="bindDialog1" title="支付宝账号：" @close="closebindDialog1">
+			<mu-text-field v-model="alipayAccount" hintText="请输入支付宝账号..." :fullWidth="true"/><br/>
 			<mu-flat-button slot="actions" @click="closebindDialog1" primary label="取消"/>
-			<mu-flat-button slot="actions" primary @click="bindAlipayAccount" label="确定"/>
+			<mu-flat-button slot="actions" primary @click="bindAlipayAccount" label="绑定"/>
 		</mu-dialog>
 		<!-- 查看绑定的支付宝账号 -->
-		<mu-dialog :open="bindDialog2" title="您好！" @close="closebindDialog2">
-			您当前账号绑定的支付宝账号是：{{alipayAccount}}
+		<mu-dialog :open="bindDialog2" title="支付宝账号：" @close="closebindDialog2">
+			{{alipayAccount}}
 			<mu-flat-button slot="actions" @click="untieAlipayAccount" primary label="去解绑"/>
 			<mu-flat-button slot="actions" primary @click="closebindDialog2" label="确定"/>
 		</mu-dialog>
@@ -71,7 +71,9 @@
 					if (response.status == 200) {
 						let driverBalance = response.data.data.driverBalance;
 						this.driverBalanceId = driverBalance.driverBalanceId;
-						if (driverBalance.alipayAccount != '' || driverBalance.alipayAccount != undefined || driverBalance.alipayAccount != null ) {
+						if (driverBalance.alipayAccount == '' || driverBalance.alipayAccount == undefined || driverBalance.alipayAccount == null ) {
+							this.bindTips = '立即绑定';
+						} else {
 							this.bindTips = '已绑定';
 							this.alipayAccount = driverBalance.alipayAccount;
 						}
@@ -81,7 +83,11 @@
 							console.log('查询账号余额返回数据：', response);
 							if (response.status == 200) {
 								let balance = response.data.data;
-								this.balance = balance.balance;
+								if (balance.balance == null) {
+									this.balance = 0;
+								} else {
+									this.balance = balance.balance;
+								}
 							}
 						}).catch((error) => {
 							console.log('查询账号余额失败返回：', error);
@@ -105,7 +111,16 @@
 			},
 			// 打开提现对话框
 			openWithdrawDialog () {
-				this.withdrawDialog3 = true;
+				if (this.alipayAccount == null ) {
+					Toast('提现功能，需绑定支付宝账号！');
+				} else {
+					if (this.balance <= 0) {
+						Toast('余额不足，不能进行提现！')
+					} else {
+						this.withdrawDialog3 = true;
+					}
+				}
+
 			},
 			// 打开绑定对话框
 			openBindDialog () {
@@ -132,14 +147,40 @@
 			// 绑定支付宝账号
 			bindAlipayAccount () {
 				this.$axios.post('/api/driverBalance/bindAlipayAccount', {
-					driverBalanceId: '',
-					alipayAccount: ''
+					driverBalanceId: this.driverBalanceId,
+					alipayAccount: this.alipayAccount
+				}).then((response) => {
+					this.bindDialog1 = false;
+					console.log('绑定支付宝账号返回：', response);
+					if (response.status == 200) {
+						this.alipayAccount = response.data.data.alipayAccount;
+						this.bindTips = '已绑定'
+						Toast('绑定成功！');
+					}
+				}).catch((error) => {
+					this.bindDialog1 = false;
+					Toast('绑定失败！');
+					console.log('绑定支付宝失败返回：', error);
 				})
 			},
 			// 解绑支付宝账号
 			untieAlipayAccount () {
 				this.bindDialog2 = false;
-				Toast('解绑功能未实现！');
+				// Toast('解绑功能未实现！');
+				this.$axios.post('/api/driverBalance/bindAlipayAccount', {
+					driverBalanceId: this.driverBalanceId,
+					alipayAccount: null
+				}).then((response) => {
+					console.log('解绑支付宝账号返回：', response);
+					if (response.status == 200) {
+						Toast('解绑成功！');
+						this.alipayAccount = response.data.data.alipayAccount;
+						this.bindTips = '立即绑定';
+					}
+				}).catch((error) => {
+					Toast('绑定失败！');
+					console.log('解绑支付宝失败返回：', error);
+				})
 			},
 			// 提现
 			withdraw () {
@@ -170,6 +211,7 @@
 					}
 				}).catch((error) => {
 					console.log('提现请求失败返回：', error);
+					Toast('提现失败！')
 					if (error.status == 500) {
 						alert(error.message + '，(' + error.status + ')');
 					}
