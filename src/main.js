@@ -21,7 +21,9 @@ Vue.use(MuseUI)
 Vue.use(BaiduMap, {
 	ak: 'AgWMKM9B5sGxq6pgPsuymZp8ZrwqYtj7'
 })
-Vue.use(VueSocketio, 'http://forcar.vip:8081?token='+ store.state.token + '&role=role_driver')
+if (store.state.token != null) {
+	Vue.use(VueSocketio, 'http://forcar.vip:8081?token='+ store.state.token + '&role=role_driver')
+}
 Vue.use(Vant)
 
 new Vue({
