@@ -1,39 +1,41 @@
 <template>
-	<div >
+	<div style="background: #fff">
 		<bar></bar>
 		<baidu-map></baidu-map>
-		<div style="text-align: center; margin: 16px 16px">
-			<mu-raised-button label="开放接单" :disabled="order_disabled" @click="getTrip"/>
-			&nbsp;&nbsp;&nbsp;
-			<mu-raised-button label="停止接单" :disabled="stop_disabled" @click="stopOrder"/>
-		</div>
-		<div v-if="!List"></div>
-		<div v-else>
-			<mu-tabs :value="activeTab" @change="handleTabChange">
-				<mu-tab value="published" title="已发布行程"/>
-				<mu-tab value="publishing" title="实时发布行程"/>
-			</mu-tabs>
-			 <div v-if="activeTab === 'published'">
-				<mu-list v-for="(publishedTripList, index) in publishedTripLists"  @itemClick="acceptOrder(index)" :key="index">
-					<mu-list-item 
-						:title="publishedTripList.departure + ' → ' + publishedTripList.destination" 
-						:describeText="'乘客：' + publishedTripList.passengerNickname + '，出行时间：' + publishedTripList.departureTime" >
-						<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
-						<mu-badge content="即时" primary slot="right" v-if="judgeTripType(index)"/>
-						<mu-badge content="预约" secondary slot="right" v-else/>
-					</mu-list-item>
-				</mu-list>
+		<div style="height: 300px">
+			<div style="text-align: center; margin: 16px 16px">
+				<mu-raised-button label="开放接单" :disabled="order_disabled" @click="getTrip"/>
+				&nbsp;&nbsp;&nbsp;
+				<mu-raised-button label="停止接单" :disabled="stop_disabled" @click="stopOrder"/>
 			</div>
-			<div v-if="activeTab === 'publishing'">
-				<mu-list v-for="(publishingTripList, index) in publishingTripLists"  @itemClick="acceptOrder(index)" :key="index">
-					<mu-list-item
-						:title="publishingTripList.departure + ' → ' + publishingTripList.destination" 
-						:describeText="'乘客：' + publishingTripList.passengerNickname + '，出行时间：' + publishingTripList.departureTime" >
-						<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
-						<mu-badge content="即时" primary slot="right" v-if="judgeNowTripType(index)"/>
-						<mu-badge content="预约" secondary slot="right" v-else/>
-					</mu-list-item>
-				</mu-list>
+			<div v-if="!List"></div>
+			<div v-else>
+				<mu-tabs :value="activeTab" @change="handleTabChange">
+					<mu-tab value="published" title="已发布行程"/>
+					<mu-tab value="publishing" title="实时发布行程"/>
+				</mu-tabs>
+				<div v-if="activeTab === 'published'">
+					<mu-list v-for="(publishedTripList, index) in publishedTripLists"  @itemClick="acceptOrder(index)" :key="index">
+						<mu-list-item 
+							:title="publishedTripList.departure + ' → ' + publishedTripList.destination" 
+							:describeText="'乘客：' + publishedTripList.passengerNickname + '，出行时间：' + publishedTripList.departureTime" >
+							<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
+							<mu-badge content="即时" primary slot="right" v-if="judgeTripType(index)"/>
+							<mu-badge content="预约" secondary slot="right" v-else/>
+						</mu-list-item>
+					</mu-list>
+				</div>
+				<div v-if="activeTab === 'publishing'">
+					<mu-list v-for="(publishingTripList, index) in publishingTripLists"  @itemClick="acceptOrder(index)" :key="index">
+						<mu-list-item
+							:title="publishingTripList.departure + ' → ' + publishingTripList.destination" 
+							:describeText="'乘客：' + publishingTripList.passengerNickname + '，出行时间：' + publishingTripList.departureTime" >
+							<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
+							<mu-badge content="即时" primary slot="right" v-if="judgeNowTripType(index)"/>
+							<mu-badge content="预约" secondary slot="right" v-else/>
+						</mu-list-item>
+					</mu-list>
+				</div>
 			</div>
 		</div>
 		<!-- 车主认证审核中弹窗 -->
@@ -46,7 +48,7 @@
 		<mu-dialog :open="openDialog2" title="抱歉！" @close="hideDialog2">
 			您的车主认证未通过审核，您可以尝试再次提交申请！
 			<mu-flat-button slot="actions" @click="hideDialog2" primary label="取消"/>
-			<mu-flat-button slot="actions" primary @click="closeDialog2" label="前往认证"/>
+			<mu-flat-button slot="actions" primary @click="goAuthenticatioin" label="前往认证"/>
 		</mu-dialog>
 	</div>
 </template>
@@ -285,7 +287,7 @@
 				this.openDialog1 = false;
 			},
 			// 未通过认证对话框关闭事件
-			closeDialog2 () {
+			goAuthenticatioin () {
 				this.openDialog2 = false;
 				this.$router.push({name: 'Authentication'});
 			},
