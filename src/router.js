@@ -12,6 +12,7 @@ import Welcome from '@/components/authentication/Welcome'
 import HandleTrip from '@/components/trip/HandleTrip'
 import HistoryTrip from '@/components/trip/HistoryTrip'
 import TripDetail from '@/components/trip/TripDetail'
+import EvaluateTrip from '@/components/trip/EvaluateTrip'
 import Wallet from '@/components/user/Wallet'
 import CarDriving from '@/components/trip/CarDriving'
 
@@ -80,6 +81,14 @@ const router = new VueRouter({
 				requireAuthDriver: true
 			},
 			component: TripDetail
+		},
+		{
+			path: '/trip/evaluate',
+			name: 'EvaluateTrip',
+			meta: {
+				requireAuth: true
+			},
+			component: EvaluateTrip
 		},
 		{
 			path: '/user/wallet',
