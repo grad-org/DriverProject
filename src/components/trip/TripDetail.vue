@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<mu-appbar ref="barDiv" title="返回">
-			<mu-icon-button icon="keyboard_arrow_left" slot="left" @click="goBack"/>
+			<mu-icon-button icon="arrow_back" slot="left" @click="goBack"/>
 		</mu-appbar>
 		<baidu-map-history ref="mapDiv" :style="{height: mapHeight}"></baidu-map-history>
 		<trip-detail ref="selectDiv"></trip-detail>
