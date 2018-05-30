@@ -1,7 +1,8 @@
 <template>
 	<div>
-		<mu-appbar ref="barDiv" title="我的行程" style="position: fixed; top: 0">
+		<mu-appbar ref="barDiv" title="我的行程" style="position: fixed; top: 0; text-align: center;">
 			<mu-icon-button icon="arrow_back" slot="left" @click="goBack"/>
+			<mu-flat-button slot="right" style="width: 48px" disabled/>
 		</mu-appbar>
 		<div :style="listStyle" >	
 			<van-pull-refresh v-model="isLoading" pulling-text="下拉即可刷新..." loosing-text="释放即可刷新..." loading-text="加载中..." @refresh="onRefresh">
@@ -47,10 +48,9 @@
 		},
 		data () {
 			return {
-				hasTrip: true,	// 判断是否有行程
+				hasTrip: false,	// 判断是否有行程
 				listStyle: {
 					marginTop: '',	// 用于判断Bar高度
-					overFlow_y: 'auto'
 				},
 				
 				// 无行程，上拉刷新
@@ -58,7 +58,7 @@
 				notTripTips: true,	// 没有历史行程的提示
 				serviceError: false,	// 内部服务出错的提示
 				// vant list
-				tripLists: null,
+				tripLists: [],
 				loading: false,
 				finished: true,
 				userinfo: null
@@ -71,16 +71,31 @@
 			_this.$axios.get('/api/tripOrder/search/findAllByDriver?driverId=' + this.userinfo.driverId)
 			.then((response) => {
 				console.log('查看某乘客的全部历史行程返回数据：', response.data);
+				let data = response.data.data;
 				_this.tripLists = response.data.data;
 				// console.log(_this.tripLists.length)
-				if (_this.tripLists.length == 0) {
+				if (data.length == 0) {
+					// console.log('执行这里？')
+					_this.hasTrip = false;
 					_this.notTripTips = true;
 					_this.serviceError = false;
+				} else {
+					// console.log('还是这里？')
+					_this.hasTrip = true;
+					_this.tripLists = response.data.data;
 				}
 			})
 			.catch((error) => {
 				console.log(error);
 				_this.hasTrip = false;
+				if (error.status == 404) {
+					_this.notTripTips = true;
+					_this.serviceError = false;
+				};
+				if (error.status == 500) {
+					_this.notTripTips = false;
+					_this.serviceError = true;
+				}
 			})
 		},
 		mounted () {
@@ -100,24 +115,25 @@
 					window.localStorage.setItem('ProcessingTrip', JSON.stringify(this.tripLists[index]));
 					this.$router.push({name: 'CarDriving'})
 				} else if (status == 'ACCEPTED') {		// 已受理：ACCEPTED
-					alert('已受理，仍需处理');
+					// alert('已受理，仍需处理');
 					// window.localStorage.removeItem('TripDetail')
 					// window.localStorage.setItem('T1', JSON.stringify(this.tripLists[index]));
 					// this.$router.push({name: 'Progressing'});
 				} else if (status == 'PROCESSING_COMPLETED') {		// 订单完成，但乘客未支付车费：PROCESSING_COMPLETED
-					alert('乘客未支付本次行程费用，仍需处理');
+					// alert('乘客未支付本次行程费用，仍需处理');
 				} else {
 					// 订单完成，且支付完成：PAYMENT_COMPLETED
-					window.localStorage.setItem('HistoryTripDetail', JSON.stringify(this.tripLists[index]))
-					this.$axios.get('/api/tripOrder/' + tripOrderId).then((response) => {
-						console.log('根据行程订单id查询行程明细返回数据：', response)
-						if (response.status == 200) {
-							window.localStorage.setItem('HistoryTripDetail', JSON.stringify(response.data.data))
-							this.$router.push({path: '/trip/history/detail', name: 'TripDetail', params: {tripOrderId: tripOrderId}})
-						}
-					}).catch((error) => {
-						console.log(error)
-					})
+					window.localStorage.setItem('HistoryTripDetail', JSON.stringify(this.tripLists[index]));
+					this.$router.push({path: '/trip/history/detail', name: 'TripDetail', params: {tripOrderId: tripOrderId}});
+					// this.$axios.get('/api/tripOrder/' + tripOrderId).then((response) => {
+					// 	console.log('根据行程订单id查询行程明细返回数据：', response)
+					// 	if (response.status == 200) {
+					// 		window.localStorage.setItem('HistoryTripDetail', JSON.stringify(response.data.data))
+					// 		this.$router.push({path: '/trip/history/detail', name: 'TripDetail', params: {tripOrderId: tripOrderId}})
+					// 	}
+					// }).catch((error) => {
+					// 	console.log(error)
+					// })
 				}
 			},
 			orderStatus (index) {
@@ -156,8 +172,15 @@
 					_this.$axios.get('/api/tripOrder/search/findAllByDriver?driverId=' + this.userinfo.driverId)
 					.then((response) => {
 						console.log(response.data.data);
-						_this.tripLists = response.data.data;
-						_this.hasTrip = true;
+						let data = response.data.data;
+						if (data.length == 0) {
+							_this.hasTrip = false;
+							_this.notTripTips = true;
+							_this.serviceError = false;
+						} else {
+							_this.tripLists = response.data.data;
+							_this.hasTrip = true;
+						}
 					})
 					.catch((error) => {
 						console.log(error);
