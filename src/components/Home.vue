@@ -1,13 +1,14 @@
 <template>
 	<div style="background: #fff">
-		<bar></bar>
-		<baidu-map></baidu-map>
-		<div style="height: 300px">
+		<bar ref="barDiv" ></bar>
+		<baidu-map ref="mapDiv"></baidu-map>
+		<div ref="selectDiv" :style="{height: selectHeight}" class="select-class">
 			<div style="text-align: center; margin: 16px 16px">
-				<mu-raised-button label="开放接单" :disabled="order_disabled" @click="getTrip"/>
+				<mu-raised-button label="开始听单" :disabled="order_disabled" @click="getTrip"/>
 				&nbsp;&nbsp;&nbsp;
-				<mu-raised-button label="停止接单" :disabled="stop_disabled" @click="stopOrder"/>
+				<mu-raised-button label="停止听单" :disabled="stop_disabled" @click="stopOrder"/>
 			</div>
+			<mu-divider/>
 			<div v-if="!List"></div>
 			<div v-else>
 				<mu-tabs :value="activeTab" @change="handleTabChange">
@@ -16,9 +17,13 @@
 				</mu-tabs>
 				<div v-if="activeTab === 'published'">
 					<mu-list v-for="(publishedTripList, index) in publishedTripLists"  @itemClick="acceptOrder(index)" :key="index">
+					<!-- <mu-list v-for="(publishedTripList, index) in publishedTripLists"  @itemClick="openTripDetailDialog(index)" :key="index"> -->
+						<!-- <mu-list-item 
+							:title="publishedTripList.departure + ' → ' + publishedTripList.destination" 
+							:describeText="'乘客：' + publishedTripList.passengerNickname + '，出行时间：' + publishedTripList.departureTime" > -->
 						<mu-list-item 
 							:title="publishedTripList.departure + ' → ' + publishedTripList.destination" 
-							:describeText="'乘客：' + publishedTripList.passengerNickname + '，出行时间：' + publishedTripList.departureTime" >
+							:describeText="'出行时间：' + publishedTripList.departureTime.slice(0, 16)" >
 							<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
 							<mu-badge content="即时" primary slot="right" v-if="judgeTripType(index)"/>
 							<mu-badge content="预约" secondary slot="right" v-else/>
@@ -27,9 +32,13 @@
 				</div>
 				<div v-if="activeTab === 'publishing'">
 					<mu-list v-for="(publishingTripList, index) in publishingTripLists"  @itemClick="acceptOrder(index)" :key="index">
+					<!-- <mu-list v-for="(publishingTripList, index) in publishingTripLists"  @itemClick="openTripDetailDialog(index)" :key="index"> -->
+						<!-- <mu-list-item
+							:title="publishingTripList.departure + ' → ' + publishingTripList.destination" 
+							:describeText="'乘客：' + publishingTripList.passengerNickname + '，出行时间：' + publishingTripList.departureTime" > -->
 						<mu-list-item
 							:title="publishingTripList.departure + ' → ' + publishingTripList.destination" 
-							:describeText="'乘客：' + publishingTripList.passengerNickname + '，出行时间：' + publishingTripList.departureTime" >
+							:describeText="'出行时间：' + publishingTripList.departureTime.slice(0, 16)" >
 							<mu-avatar icon="assignment" backgroundColor="blue" slot="leftAvatar" />
 							<mu-badge content="即时" primary slot="right" v-if="judgeNowTripType(index)"/>
 							<mu-badge content="预约" secondary slot="right" v-else/>
@@ -49,6 +58,18 @@
 			您的车主认证未通过审核，您可以尝试再次提交申请！
 			<mu-flat-button slot="actions" @click="hideDialog2" primary label="取消"/>
 			<mu-flat-button slot="actions" primary @click="goAuthenticatioin" label="前往认证"/>
+		</mu-dialog>
+		<mu-dialog :open="tripDetailDialog" title="行程信息：" @close="closeTripDetailDialog">
+			<van-cell-group>
+				<!-- <van-cell :title="'出发地' + tripDetail.destination" icon="location" /> -->
+				<van-cell title="出发地" icon="location" />
+				<van-cell title="目的地" icon="contact" />
+				<van-cell title="出行时间" icon="location" />
+				<van-cell title="乘客" icon="clock" />
+				<van-cell title="行程类型" icon="info-o" />
+			</van-cell-group>
+			<mu-flat-button slot="actions" @click="closeTripDetailDialog" primary label="取消"/>
+			<mu-flat-button slot="actions" primary @click="acceptOrder" label="接单"/>
 		</mu-dialog>
 	</div>
 </template>
@@ -81,6 +102,10 @@
 				driverStatus: null,	// 车主当前的认证状态，有APPROVED、UNAPPROVED、PENDING_REVIEW
 				openDialog1: false,	// 车主认证审核中的弹窗
 				openDialog2: false,	// 车主认证未通过的弹窗
+				tripDetailDialog: false,	// 行程详情对话框弹窗
+				tripDetail: null,	// 接单详情
+
+				carId: null,	// 车主的车辆ID
 
 				activeTab: 'published',	// 默认激活的Tab
 				
@@ -88,6 +113,12 @@
 				publishingTripLists: [],
 				timeInterval: null,		// 定时器对象
 				enableListenOrder: false,	// 可以接单判断，根据车主认证状态判断
+
+				// 首页组件高度控制
+				fullHeight: document.documentElement.clientHeight,
+				barHeight: '',
+				mapHeight: '',
+				selectHeight: '',
 			}
 		},
 		sockets: {
@@ -103,6 +134,7 @@
 						// 只有车主认证通过了，才可以听单
 						this.enableListenOrder = true;
 						this.driverStatus = status;
+						this.carId = response.data.data.car.carId;
 					} else if (status == 'PENDING_REVIEW') {
 						// 待审核
 						this.enableListenOrder = false;
@@ -119,9 +151,11 @@
 			});
 		},
 		mounted () {
-			this.$socket.on('cancelTrip', function (trip) {
-				console.log('取消行程订阅：', trip);
-			});
+			// this.$socket.on('cancelTrip', function (trip) {
+			// 	console.log('取消行程订阅：', trip);
+			// });
+			this.initHeight();
+			this.setMapHeight();
 		},
 		methods: {
 			// 用于订阅乘客发布的行程
@@ -172,20 +206,25 @@
 				_this.order_disabled = false;
 				_this.stop_disabled = true;
 				_this.List = false;
-				this.$socket.off('broadcastCarLocation');
+				_this.$socket.off('broadcastCarLocation');
 				clearInterval(_this.timeInterval);	// 停止听单，清除定时器
 			},
 			// 发送位置，让用户可见
 			sendLocation () {
 				let _this = this;
-				let currentLocation = {carId: 1, lng: _this.$store.state.localPoint.point.lng, lat: _this.$store.state.localPoint.point.lat};
+				let currentLocation = {carId: _this.carId, lng: _this.$store.state.localPoint.point.lng, lat: _this.$store.state.localPoint.point.lat};
 				// this.$socket.join('broadcastTrip');
 				// 测试地址
 				// this.$socket.emit('broadcastCarLocation', {carId: 1, lng: '110', lat: '23'});
 				// 真实地址
-				this.$socket.emit('broadcastCarLocation', currentLocation);
+				_this.$socket.emit('broadcastCarLocation', currentLocation);
 			},
 			// 接单
+			openTripDetailDialog (orderIndex) {
+				this.tripDetailDialog = true;	// 打开详情对话框
+				this.tripDetail = this.publishedTripLists[orderIndex];
+				console.log('将要接单的详情：' ,this.tripDetail)
+			},
 			acceptOrder (orderIndex) {
 				let _this = this;
 				// 已发布行程
@@ -194,22 +233,20 @@
 					_this.$axios.post('/api/hailingService/tripOrder/acceptTripOrder',{
 						tripId: _this.publishedTripLists[orderIndex].tripId,
 						driverId: _this.$store.state.driverId
-					})
-					.then((response) => {
+					}).then((response) => {
 						console.log(response);
 						if (response.status == 200) {
 							_this.stop_disabled = true;
-							let tripOrder = response.data;
-							this.$socket.emit('acceptTrip', tripOrder);
+							let tripOrder = response.data.data;
+							_this.$socket.emit('acceptTrip', tripOrder);
 							window.localStorage.setItem('AcceptedTrip', JSON.stringify(response.data.data))
 							_this.$router.push({name: 'Handling'});
 						}
-					})
-					.catch((error) => {
+					}).catch((error) => {
 						console.log(error);
 						console.log(error.message);
 						if (error.status == 400) {
-							alert('此订单已被取消！')
+							alert('此订单已被取消！');
 							// 接下来应该重新获取数据，重新获取已发布行程
 							_this.$axios.get('/api/trip/search/findPublishedTripByCondition')
 							.then((response) => {
@@ -231,9 +268,11 @@
 					})
 					.then((response) => {
 						console.log(response);
+						
 						if (response.status == 200) {
 							let tripOrder = response.data.data;
 							_this.$socket.emit('acceptTrip', tripOrder);
+							console.log(tripOrder);
 							_this.stop_disabled = true;
 							window.localStorage.setItem('AcceptedTrip', JSON.stringify(response.data.data))
 							_this.$router.push({name: 'Handling'});
@@ -252,8 +291,7 @@
 						})
 						}
 					})
-				}
-				
+				}	// 实时行程监听结束
 			},
 			// 判断已发布订单类型
 			judgeTripType (val) {
@@ -293,6 +331,48 @@
 			},
 			hideDialog2 () {
 				this.openDialog2 = false;
+			},
+			closeTripDetailDialog () {
+				this.tripDetailDialog = false;
+				this.tripDetail = null;
+			},
+			initHeight () {
+				let _this = this;
+				console.log('有执行吗》？')
+				window.onresize = function () {
+					return (()=> {
+						// 浏览器内容可视高度
+						window.fullHeight = document.documentElement.clientHeight;
+						_this.fullHeight = window.fullHeight;
+						_this.mapHeight = _this.$refs.mapDiv.$el.clientHeight;
+						// console.log('触发onresize事件，此时地图高度为：' + this.fullHeight)
+						_this.selectHeight = (_this.fullHeight - _this.barHeight - _this.mapHeight) + 'px';
+					}) ()
+				}
+			},
+			setMapHeight () {
+				this.$nextTick (() => {
+					this.barHeight = this.$refs.barDiv.$el.clientHeight;
+					this.mapHeight = this.$refs.mapDiv.$el.clientHeight;
+					// 页面加载后，对地图高度进行设置
+					let h = this.fullHeight - this.barHeight - this.mapHeight;
+					// console.log('地图高度：' +h);
+					this.selectHeight = h + 'px';
+				})
+			}
+		},
+		watch: {
+			// 如果 fullHeight 发生改变，这个函数就会运行
+			fullHeight (val) {
+				if(!this.timer) {
+					this.fullHeight = val
+					this.timer = true
+					let that = this
+					setTimeout(function () {
+						that.timer = false
+					}, 1000)
+				}
+				// console.log("触发watch的fullHeight")
 			}
 		}
 	}
@@ -301,5 +381,8 @@
 <style scoped>
 	.mu-list {
 		padding: 0;
+	}
+	.select-class {
+		overflow-y: auto;
 	}
 </style>
