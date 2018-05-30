@@ -1,5 +1,5 @@
 <template>
-	<div style="text-align: center; padding: 12px">
+	<div style="text-align: center; padding: 12px; background: #fff">
 		<mu-raised-button label="返回首页" primary @click="goHome"></mu-raised-button>
 		&nbsp;&nbsp;&nbsp;
 		<mu-raised-button label="乘客上车" primary @click="imformPassenger"></mu-raised-button>
