@@ -32,7 +32,7 @@
 		<mu-appbar ref="barDiv" title="蔚蓝出行 - 车主端">
 			<mu-icon-button icon="menu" slot="left" @click="toggle(true)"/>
 			<mu-flat-button color="#fff" :label="selectedCity" slot="right"/>
-			<mu-icon-button icon="notifications" slot="right"></mu-icon-button>
+			<!-- <mu-icon-button icon="notifications" slot="right"></mu-icon-button> -->
 		</mu-appbar>
 	</div>
 </template>
@@ -58,7 +58,8 @@
 				userBackground: {
 					backgroundImage: 'url(' + require('../assets/image/bg3.jpg') + ')',
 					backgroundRepeat: "no-repeat",
-					backgroundSize: "100% auto",
+					backgroundPosition: 'center',
+					backgroundSize: "cover",
 				},
 			}
 		},
